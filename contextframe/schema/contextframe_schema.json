@@ -124,7 +124,8 @@
       "enum": [
         "document",
         "collection_header",
-        "dataset_header"
+        "dataset_header",
+        "frameset"
       ]
     },
     "raw_data_type": {

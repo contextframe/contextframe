@@ -7,6 +7,7 @@ wraps the `lance.dataset.Dataset` object providing higher-level helpers that
 mimic the public surface for documents (create, add, search,
 version access, etc.).
 """
+
 from __future__ import annotations
 
 import datetime as _dt
@@ -20,7 +21,9 @@ from typing import Any, Optional, Union
 try:
     import lance
 except ModuleNotFoundError as exc:
-    raise ImportError("lance is required for contextframe.frame. Please install contextframe with the 'lance' extra.") from exc
+    raise ImportError(
+        "lance is required for contextframe.frame. Please install contextframe with the 'lance' extra."
+    ) from exc
 
 from .helpers.metadata_utils import add_relationship_to_metadata, create_relationship
 from .schema import get_schema
@@ -108,9 +111,12 @@ class FrameRecord:
         self.path = dataset_path  # May be None, kept for backward compat
 
         # Handle raw data fields + validation
-        if (raw_data is not None and raw_data_type is None) or \
-           (raw_data is None and raw_data_type is not None):
-            raise ValueError("Both 'raw_data' and 'raw_data_type' must be provided together, or both must be None.")
+        if (raw_data is not None and raw_data_type is None) or (
+            raw_data is None and raw_data_type is not None
+        ):
+            raise ValueError(
+                "Both 'raw_data' and 'raw_data_type' must be provided together, or both must be None."
+            )
         self.raw_data = raw_data
         self.raw_data_type = raw_data_type
 
@@ -142,7 +148,7 @@ class FrameRecord:
 
     def to_table(self) -> pa.Table:
         """Return a 1-row Arrow Table matching the canonical schema."""
-        schema = get_schema(self.embed_dim)
+        schema = get_schema(embed_dim=self.embed_dim)
         arrays: dict[str, pa.Array] = {}
 
         # Mapping between schema fields and metadata / attributes
@@ -150,14 +156,22 @@ class FrameRecord:
         for field in schema:
             name = field.name
             if name == "text_content":
-                arrays[name] = self._arrowify_scalar(name, self.text_content, pa.string())
+                arrays[name] = self._arrowify_scalar(
+                    name, self.text_content, pa.string()
+                )
             elif name == "vector":
-                arrays[name] = pa.FixedSizeListArray.from_arrays(pa.array(self.vector),  # type: ignore[arg-type]
-                                                                 field.type.list_size)
+                arrays[name] = pa.FixedSizeListArray.from_arrays(
+                    pa.array(self.vector),  # type: ignore[arg-type]
+                    field.type.list_size,
+                )
             elif name == "raw_data":
-                arrays[name] = self._arrowify_scalar(name, self.raw_data, pa.large_binary())
+                arrays[name] = self._arrowify_scalar(
+                    name, self.raw_data, pa.large_binary()
+                )
             elif name == "raw_data_type":
-                arrays[name] = self._arrowify_scalar(name, self.raw_data_type, pa.string())
+                arrays[name] = self._arrowify_scalar(
+                    name, self.raw_data_type, pa.string()
+                )
             elif name == "contributors" and "contributors" in meta:
                 arrays[name] = pa.array([meta["contributors"]], type=field.type)
             elif name == "tags" and "tags" in meta:
@@ -166,7 +180,9 @@ class FrameRecord:
                 arrays[name] = pa.array([meta["relationships"]], type=field.type)
             elif name == "custom_metadata" and "custom_metadata" in meta:
                 # Convert dict → map
-                arrays[name] = pa.array([list(meta["custom_metadata"].items())], type=field.type)
+                arrays[name] = pa.array(
+                    [list(meta["custom_metadata"].items())], type=field.type
+                )
             else:
                 # Scalar fields directly from metadata or None
                 arrays[name] = self._arrowify_scalar(name, meta.get(name), field.type)
@@ -184,7 +200,9 @@ class FrameRecord:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_arrow(cls, record_batch: pa.RecordBatch | pa.Table, dataset_path: Path | None = None) -> FrameRecord:
+    def from_arrow(
+        cls, record_batch: pa.RecordBatch | pa.Table, dataset_path: Path | None = None
+    ) -> FrameRecord:
         """Create a FrameRecord from a 1-row RecordBatch/Table."""
         if len(record_batch) != 1:
             raise ValueError("from_arrow expects exactly 1 row")
@@ -194,7 +212,9 @@ class FrameRecord:
         vector = np.array(vector_list, dtype=np.float32)
         text_content = tbl["text_content"][0]
         metadata: dict[str, Any] = {
-            k: v[0] if isinstance(v, list) else v for k, v in tbl.items() if k not in {"text_content", "vector"}
+            k: v[0] if isinstance(v, list) else v
+            for k, v in tbl.items()
+            if k not in {"text_content", "vector"}
         }
         # Convert Map to dict
         if "custom_metadata" in metadata and metadata["custom_metadata"] is not None:
@@ -205,16 +225,18 @@ class FrameRecord:
         raw_data_type = tbl.get("raw_data_type", [None])[0]
 
         # Determine embed_dim from the loaded vector
-        current_embed_dim = len(vector) if vector is not None and vector.ndim > 0 else DEFAULT_EMBED_DIM
+        current_embed_dim = (
+            len(vector) if vector is not None and vector.ndim > 0 else DEFAULT_EMBED_DIM
+        )
 
         return cls(
             text_content=text_content,
             metadata=metadata,
             vector=vector,
-            embed_dim=current_embed_dim, # Pass the determined embed_dim
+            embed_dim=current_embed_dim,  # Pass the determined embed_dim
             raw_data=raw_data,
             raw_data_type=raw_data_type,
-            dataset_path=dataset_path
+            dataset_path=dataset_path,
         )
 
     # ------------------------------------------------------------------
@@ -264,10 +286,10 @@ class FrameRecord:
             # Allow if it's the same as the title argument, or warn, or just let it be overwritten
             # For now, let explicit param win.
             pass
-        
+
         # Explicit parameters take precedence and are added to the metadata dict
         # which will be passed to the constructor.
-        current_metadata = metadata.copy() # Work with a copy
+        current_metadata = metadata.copy()  # Work with a copy
         current_metadata["title"] = title
 
         # The raw_data and raw_data_type are passed directly to the constructor,
@@ -277,11 +299,11 @@ class FrameRecord:
 
         return cls(
             text_content=content,
-            metadata=current_metadata, # Pass the processed metadata
+            metadata=current_metadata,  # Pass the processed metadata
             vector=vector,
             embed_dim=embed_dim,
-            raw_data=raw_data, # Pass explicit raw_data
-            raw_data_type=raw_data_type, # Pass explicit raw_data_type
+            raw_data=raw_data,  # Pass explicit raw_data
+            raw_data_type=raw_data_type,  # Pass explicit raw_data_type
             # dataset_path is not set at creation time by this factory.
         )
 
@@ -331,7 +353,9 @@ class FrameRecord:
         elif self.path is not None:
             raw_uri = str(self.path)
         else:
-            raise ValueError("No dataset path provided and FrameRecord has no existing path reference.")
+            raise ValueError(
+                "No dataset path provided and FrameRecord has no existing path reference."
+            )
 
         is_remote = _is_remote(raw_uri)
 
@@ -341,22 +365,31 @@ class FrameRecord:
         dataset_path = dataset_path_obj if not is_remote else raw_uri
 
         # Suffix checks only apply to local Path objects.
-        if (not is_remote and dataset_path_obj and dataset_path_obj.suffix != ".lance") or (
-            is_remote and not raw_uri.endswith(".lance")
-        ):
+        if (
+            not is_remote and dataset_path_obj and dataset_path_obj.suffix != ".lance"
+        ) or (is_remote and not raw_uri.endswith(".lance")):
             raise ValueError(
                 f"Dataset path must point to a '.lance' directory. Received: {dataset_path}"
             )
 
         # Create or open dataset
-        if not is_remote and dataset_path_obj and dataset_path_obj.exists() and overwrite_dataset:
+        if (
+            not is_remote
+            and dataset_path_obj
+            and dataset_path_obj.exists()
+            and overwrite_dataset
+        ):
             # Dangerously wipe the dataset directory before re-creating.
             import shutil
 
             shutil.rmtree(dataset_path_obj)
 
-        if (not is_remote and dataset_path_obj and not dataset_path_obj.exists()) or is_remote:
-            ds = FrameDataset.create(raw_uri, embed_dim=self.embed_dim, storage_options=storage_options)
+        if (
+            not is_remote and dataset_path_obj and not dataset_path_obj.exists()
+        ) or is_remote:
+            ds = FrameDataset.create(
+                raw_uri, embed_dim=self.embed_dim, storage_options=storage_options
+            )
         else:
             ds = FrameDataset.open(raw_uri, storage_options=storage_options)
 
@@ -377,7 +410,9 @@ class FrameRecord:
             raise FileNotFoundError(f"Dataset not found: {dataset_path}")
 
         if not dataset_path.is_dir() or not dataset_path.name.endswith(".lance"):
-            raise ValueError("from_file expects a directory ending with '.lance' that represents a Lance dataset")
+            raise ValueError(
+                "from_file expects a directory ending with '.lance' that represents a Lance dataset"
+            )
 
         ds = FrameDataset.open(dataset_path)
         row_count = ds._native.count_rows()
@@ -394,7 +429,9 @@ class FrameRecord:
     # New granular helpers
     # ------------------------------------------------------------------
 
-    def write_to_dataset(self, dataset_path: str | Path, *, overwrite_dataset: bool = False) -> None:
+    def write_to_dataset(
+        self, dataset_path: str | Path, *, overwrite_dataset: bool = False
+    ) -> None:
         """Alias for :py:meth:`save` to maintain naming symmetry with spec."""
         self.save(dataset_path, overwrite_dataset=overwrite_dataset)
 
@@ -569,17 +606,23 @@ class FrameDataset:
         raw_uri = str(path)
         is_remote = "://" in raw_uri
 
-        schema = get_schema(embed_dim)
+        schema = get_schema(embed_dim=embed_dim)
 
         if not is_remote and Path(raw_uri).exists() and not overwrite:
-            raise FileExistsError(f"Dataset already exists at {path}. Pass overwrite=True to recreate.")
-        tbl = pa.Table.from_arrays([], schema=schema)  # empty table with schema
+            raise FileExistsError(
+                f"Dataset already exists at {path}. Pass overwrite=True to recreate."
+            )
+        # Create empty arrays matching the schema
+        empty_arrays = [pa.array([], type=field.type) for field in schema]
+        tbl = pa.Table.from_arrays(empty_arrays, schema=schema)
         # `write_dataset` will create or overwrite based on directory state.
         # We wiped any existing dir in caller, so simply write.
         if storage_options is None:
             ds = lance.write_dataset(tbl, raw_uri, schema=schema)
         else:
-            ds = lance.write_dataset(tbl, raw_uri, schema=schema, storage_options=storage_options)
+            ds = lance.write_dataset(
+                tbl, raw_uri, schema=schema, storage_options=storage_options
+            )
         return cls(ds)
 
     @classmethod
@@ -608,7 +651,9 @@ class FrameDataset:
         if storage_options is None:
             ds = lance.dataset(raw_uri, version=version)
         else:
-            ds = lance.dataset(raw_uri, version=version, storage_options=storage_options)
+            ds = lance.dataset(
+                raw_uri, version=version, storage_options=storage_options
+            )
         return cls(ds)
 
     # ------------------------------------------------------------------
@@ -707,7 +752,9 @@ class FrameDataset:
         # Remove the existing record and sanity-check the outcome.
         delete_count: int = self._dataset.delete(f"uuid = '{record.uuid}'")
         if delete_count == 0:
-            raise ValueError(f"No record found with uuid={record.uuid!r} – cannot update.")
+            raise ValueError(
+                f"No record found with uuid={record.uuid!r} – cannot update."
+            )
         if delete_count > 1:
             raise ValueError(
                 f"Integrity error: multiple ({delete_count}) records deleted for uuid={record.uuid!r}."
@@ -758,7 +805,32 @@ class FrameDataset:
 
     def nearest(self, query_vector: np.ndarray, *, k: int = 10, **kwargs):
         """Find k-nearest neighbors to a query vector."""
-        return self._dataset.to_table(nearest={"column": "vector", "q": query_vector, "k": k}, **kwargs)
+        return self._dataset.to_table(
+            nearest={"column": "vector", "q": query_vector, "k": k}, **kwargs
+        )
+
+    def get_by_uuid(self, uuid: str) -> FrameRecord | None:
+        """Retrieve a specific record by its UUID.
+
+        Parameters
+        ----------
+        uuid:
+            The UUID of the record to retrieve
+
+        Returns
+        -------
+        Optional[FrameRecord]
+            The record if found, None otherwise
+        """
+        tbl = self.scanner(filter=f"uuid = '{uuid}'").to_table()
+        if tbl.num_rows == 0:
+            return None
+        elif tbl.num_rows == 1:
+            return FrameRecord.from_arrow(tbl, dataset_path=Path(self._dataset.uri))
+        else:
+            raise ValueError(
+                f"Multiple records found with uuid={uuid!r} (data integrity error)"
+            )
 
     # ------------------------------------------------------------------
     # Advanced scanner proxy (filter, columns, nearest, etc.)
@@ -823,9 +895,15 @@ class FrameDataset:
         tbl = self.scanner(filter=f"collection = '{collection_name}'").to_table()
         header: FrameRecord | None = None
         for i in range(tbl.num_rows):
-            fr = FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            fr = FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             meta = fr.metadata
-            record_type = meta.get("record_type") or (meta.get("custom_metadata", {}).get("record_type") if meta.get("custom_metadata") else None)
+            record_type = meta.get("record_type") or (
+                meta.get("custom_metadata", {}).get("record_type")
+                if meta.get("custom_metadata")
+                else None
+            )
             if record_type == "collection_header":
                 if header is not None:
                     raise ValueError(
@@ -834,7 +912,9 @@ class FrameDataset:
                 header = fr
         return header
 
-    def get_collection_members(self, collection_name: str, *, include_header: bool = False) -> list[FrameRecord]:
+    def get_collection_members(
+        self, collection_name: str, *, include_header: bool = False
+    ) -> list[FrameRecord]:
         """Return all *member* records for *collection_name*.
 
         Parameters
@@ -848,10 +928,15 @@ class FrameDataset:
         tbl = self.scanner(filter=f"collection = '{collection_name}'").to_table()
         out: list[FrameRecord] = []
         for i in range(tbl.num_rows):
-            fr = FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            fr = FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             meta = fr.metadata
             is_header = (meta.get("record_type") == "collection_header") or (
-                meta.get("custom_metadata", {}).get("record_type") == "collection_header" if meta.get("custom_metadata") else False
+                meta.get("custom_metadata", {}).get("record_type")
+                == "collection_header"
+                if meta.get("custom_metadata")
+                else False
             )
             if is_header and not include_header:
                 continue
@@ -881,21 +966,285 @@ class FrameDataset:
         # Unfortunately filtering on nested list<struct> is not fully
         # supported yet, so we load the *relationships* column for all rows
         # and apply filtering in Python.
-        tbl = self._dataset.to_table(columns=None)  # include all columns so we can build FrameRecord later
+        tbl = self._dataset.to_table(
+            columns=None
+        )  # include all columns so we can build FrameRecord later
         members: list[FrameRecord] = []
         for i in range(tbl.num_rows):
-            fr = FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            fr = FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for rel in fr.metadata.get("relationships", []) or []:
                 # A relationship can reference the header using one of the
                 # identifier fields.  Match against any of them so the caller
                 # can pass the UUID irrespective of the exact field used.
                 identifier_match = False
-                if rel.get("id") == header_uuid or rel.get("path") == header_uuid or rel.get("uri") == header_uuid or rel.get("cid") == header_uuid:
+                if (
+                    rel.get("id") == header_uuid
+                    or rel.get("path") == header_uuid
+                    or rel.get("uri") == header_uuid
+                    or rel.get("cid") == header_uuid
+                ):
                     identifier_match = True
 
                 if identifier_match and rel.get("type") == "member_of":
                     members.append(fr)
-                    break  # no need to inspect other relationships for this record 
+                    break  # no need to inspect other relationships for this record
+
+    # ------------------------------------------------------------------
+    # FrameSet management helpers
+    # ------------------------------------------------------------------
+
+    def create_frameset(
+        self,
+        title: str,
+        content: str,
+        query: str | None = None,
+        source_records: list[tuple[str, str]] | None = None,
+        vector: np.ndarray | None = None,
+        **kwargs,
+    ) -> FrameRecord:
+        """Create a FrameSet record from LLM analysis results.
+
+        A FrameSet is a derived document that contains LLM-generated analysis,
+        relevant excerpts from source documents, and contextual explanations.
+        It's created as a result of querying a ContextFrame and synthesizing
+        information from multiple sources.
+
+        Parameters
+        ----------
+        title:
+            Title of the frameset (e.g., "Q4 COGS Analysis for Tesla")
+        content:
+            The main content including LLM analysis and excerpts
+        query:
+            The original query that generated this frameset
+        source_records:
+            List of (uuid, excerpt) tuples linking to source documents
+        vector:
+            Optional embedding for the frameset content
+        **kwargs:
+            Additional metadata fields for the FrameRecord
+
+        Returns
+        -------
+        FrameRecord
+            The created frameset record
+        """
+        # Build custom metadata
+        custom_metadata = kwargs.pop("custom_metadata", {})
+        if query:
+            custom_metadata["original_query"] = query
+        if source_records:
+            # Store source references as JSON
+            custom_metadata["source_excerpts"] = str(source_records)
+
+        # Build relationships to source documents
+        relationships = kwargs.pop("relationships", [])
+        if source_records:
+            for uuid, _ in source_records:
+                relationships.append(
+                    {
+                        "type": "reference",
+                        "id": uuid,
+                        "description": "Source document for frameset",
+                    }
+                )
+
+        # Create the frameset record
+        frameset = FrameRecord.create(
+            title=title,
+            content=content,
+            record_type="frameset",
+            custom_metadata=custom_metadata,
+            relationships=relationships,
+            vector=vector,
+            **kwargs,
+        )
+
+        # Add to dataset
+        self.add(frameset)
+        return frameset
+
+    def get_frameset(self, frameset_id: str) -> FrameRecord | None:
+        """Retrieve a FrameSet record by UUID.
+
+        Parameters
+        ----------
+        frameset_id:
+            UUID of the frameset
+
+        Returns
+        -------
+        Optional[FrameRecord]
+            The frameset record if found and is of type 'frameset'
+        """
+        record = self.get_by_uuid(frameset_id)
+        if record and record.metadata.get("record_type") == "frameset":
+            return record
+        return None
+
+    def get_frameset_sources(self, frameset_id: str) -> list[tuple[FrameRecord, str]]:
+        """Get source documents and excerpts referenced by a frameset.
+
+        Parameters
+        ----------
+        frameset_id:
+            UUID of the frameset
+
+        Returns
+        -------
+        List[Tuple[FrameRecord, str]]
+            List of (source_record, excerpt) tuples
+        """
+        frameset = self.get_frameset(frameset_id)
+        if not frameset:
+            return []
+
+        # Get source excerpts from metadata
+        import ast
+
+        excerpts_str = frameset.metadata.get("custom_metadata", {}).get(
+            "source_excerpts", ""
+        )
+        if not excerpts_str:
+            # Just return referenced documents without excerpts
+            refs = self.find_related_to(frameset_id, relationship_type="reference")
+            return [(ref, "") for ref in refs]
+
+        try:
+            source_records = ast.literal_eval(excerpts_str)
+            results = []
+            for uuid, excerpt in source_records:
+                record = self.get_by_uuid(uuid)
+                if record:
+                    results.append((record, excerpt))
+            return results
+        except (ValueError, SyntaxError):
+            # Fallback to relationships
+            refs = self.find_related_to(frameset_id, relationship_type="reference")
+            return [(ref, "") for ref in refs]
+
+    def update_frameset_content(
+        self,
+        frameset_id: str,
+        new_content: str | None = None,
+        append_content: str | None = None,
+        new_sources: list[tuple[str, str]] | None = None,
+    ) -> FrameRecord:
+        """Update a frameset's content or add new source references.
+
+        Parameters
+        ----------
+        frameset_id:
+            UUID of the frameset to update
+        new_content:
+            Replace the entire content
+        append_content:
+            Append to existing content
+        new_sources:
+            Additional (uuid, excerpt) tuples to add
+
+        Returns
+        -------
+        FrameRecord
+            The updated frameset record
+        """
+        frameset = self.get_frameset(frameset_id)
+        if not frameset:
+            raise ValueError(f"FrameSet {frameset_id} not found")
+
+        # Update content
+        if new_content is not None:
+            frameset.content = new_content
+        elif append_content is not None:
+            frameset.content = frameset.content + "\n\n" + append_content
+
+        # Add new sources
+        if new_sources:
+            import ast
+
+            # Get existing sources
+            excerpts_str = frameset.metadata.get("custom_metadata", {}).get(
+                "source_excerpts", ""
+            )
+            try:
+                existing = ast.literal_eval(excerpts_str) if excerpts_str else []
+            except (ValueError, SyntaxError):
+                existing = []
+
+            # Add new sources
+            existing.extend(new_sources)
+            frameset.metadata.setdefault("custom_metadata", {})["source_excerpts"] = (
+                str(existing)
+            )
+
+            # Add relationships
+            for uuid, _ in new_sources:
+                frameset.add_relationship(
+                    uuid,
+                    relationship_type="reference",
+                    description="Source document for frameset",
+                )
+
+        # Update the record
+        self.update_record(frameset)
+        return frameset
+
+    def find_framesets_by_query(self, query_substring: str) -> list[FrameRecord]:
+        """Find framesets that were created from queries containing a substring.
+
+        Parameters
+        ----------
+        query_substring:
+            Substring to search for in original queries
+
+        Returns
+        -------
+        List[FrameRecord]
+            Framesets whose original_query contains the substring
+        """
+        all_framesets = self.find_by_record_type("frameset")
+        results = []
+        for fs in all_framesets:
+            original_query = fs.metadata.get("custom_metadata", {}).get(
+                "original_query", ""
+            )
+            if query_substring.lower() in original_query.lower():
+                results.append(fs)
+        return results
+
+    def find_framesets_referencing(self, document_uuid: str) -> list[FrameRecord]:
+        """Find all framesets that reference a specific document.
+
+        Parameters
+        ----------
+        document_uuid:
+            UUID of the document to search for
+
+        Returns
+        -------
+        List[FrameRecord]
+            Framesets that reference this document
+        """
+        # Use the existing relationship finder
+        return [
+            record
+            for record in self.find_related_to(
+                document_uuid, relationship_type="reference"
+            )
+            if record.metadata.get("record_type") == "frameset"
+        ]
+
+    def list_framesets(self) -> list[FrameRecord]:
+        """List all framesets in the dataset.
+
+        Returns
+        -------
+        List[FrameRecord]
+            All records with record_type='frameset'
+        """
+        return self.find_by_record_type("frameset")
 
     def find_by_status(self, status: str) -> list[FrameRecord]:
         """Return all records whose ``status`` metadata exactly matches *status*.
@@ -1014,7 +1363,9 @@ class FrameDataset:
                     or rel.get("path") == identifier
                     or rel.get("cid") == identifier
                 )
-                type_match = relationship_type is None or rel.get("type") == relationship_type
+                type_match = (
+                    relationship_type is None or rel.get("type") == relationship_type
+                )
                 if id_match and type_match:
                     records.append(
                         FrameRecord.from_arrow(
@@ -1022,7 +1373,7 @@ class FrameDataset:
                             dataset_path=Path(self._dataset.uri),
                         )
                     )
-                    break  # no need to inspect further relationships 
+                    break  # no need to inspect further relationships
 
     # ------------------------------------------------------------------
     # Additional scalar metadata helpers
@@ -1032,11 +1383,15 @@ class FrameDataset:
         """Return all records whose ``author`` column equals *author*."""
         tbl = self.scanner(filter=f"author = '{author}'").to_table()
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
-    def find_by_collection(self, collection: str, *, include_header: bool = False) -> list[FrameRecord]:
+    def find_by_collection(
+        self, collection: str, *, include_header: bool = False
+    ) -> list[FrameRecord]:
         """Fetch all rows that belong to *collection*.
 
         Parameters
@@ -1049,10 +1404,14 @@ class FrameDataset:
         """
         filter_str = f"collection = '{collection}'"
         if not include_header:
-            filter_str += " AND (record_type IS NULL OR record_type <> 'collection_header')"
+            filter_str += (
+                " AND (record_type IS NULL OR record_type <> 'collection_header')"
+            )
         tbl = self.scanner(filter=filter_str).to_table()
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
@@ -1060,7 +1419,9 @@ class FrameDataset:
         """Return rows whose ``record_type`` equals *record_type*."""
         tbl = self.scanner(filter=f"record_type = '{record_type}'").to_table()
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
@@ -1068,7 +1429,9 @@ class FrameDataset:
         """Return rows with a matching ``source_type`` value."""
         tbl = self.scanner(filter=f"source_type = '{source_type}'").to_table()
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
@@ -1076,7 +1439,9 @@ class FrameDataset:
         """Return rows whose ``updated_at`` column >= *date_iso* (YYYY-MM-DD)."""
         tbl = self.scanner(filter=f"updated_at >= '{date_iso}'").to_table()
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
@@ -1085,7 +1450,9 @@ class FrameDataset:
         filter_str = f"updated_at >= '{start_iso}' AND updated_at <= '{end_iso}'"
         tbl = self.scanner(filter=filter_str).to_table()
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
@@ -1097,7 +1464,9 @@ class FrameDataset:
         quoted = ", ".join(f"'{u}'" for u in uuids)
         tbl = self.scanner(filter=f"uuid IN [{quoted}]").to_table()
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
@@ -1108,7 +1477,9 @@ class FrameDataset:
     def _iter_records_table(self, tbl):
         """Internal helper to yield FrameRecord from a full arrow Table."""
         for i in range(tbl.num_rows):
-            yield FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            yield FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
 
     def find_by_any_tag(self, tags: list[str]) -> list[FrameRecord]:
         """Return rows that contain *at least one* tag from *tags*."""
@@ -1121,7 +1492,11 @@ class FrameDataset:
         for i in range(tbl.num_rows):
             row_tags = tags_col[i].as_py()
             if row_tags and tag_set.intersection(row_tags):
-                results.append(FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)))
+                results.append(
+                    FrameRecord.from_arrow(
+                        tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+                    )
+                )
         return results
 
     def find_by_all_tags(self, tags: list[str]) -> list[FrameRecord]:
@@ -1135,10 +1510,16 @@ class FrameDataset:
         for i in range(tbl.num_rows):
             row_tags = tags_col[i].as_py()
             if row_tags and required.issubset(row_tags):
-                results.append(FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)))
+                results.append(
+                    FrameRecord.from_arrow(
+                        tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+                    )
+                )
         return results
 
-    def find_custom_metadata(self, key: str, *, value: str | None = None) -> list[FrameRecord]:
+    def find_custom_metadata(
+        self, key: str, *, value: str | None = None
+    ) -> list[FrameRecord]:
         """Return rows whose ``custom_metadata`` map contains *key* (and optionally *value*)."""
         tbl = self.scanner().to_table()
         results: list[FrameRecord] = []
@@ -1148,7 +1529,11 @@ class FrameDataset:
             if mapping is None:
                 continue
             if key in mapping and (value is None or mapping[key] == value):
-                results.append(FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)))
+                results.append(
+                    FrameRecord.from_arrow(
+                        tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+                    )
+                )
         return results
 
     def find_by_contributor(self, contributor: str) -> list[FrameRecord]:
@@ -1159,14 +1544,25 @@ class FrameDataset:
         for i in range(tbl.num_rows):
             contribs = contrib_col[i].as_py()
             if contribs and contributor in contribs:
-                results.append(FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)))
+                results.append(
+                    FrameRecord.from_arrow(
+                        tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+                    )
+                )
         return results
 
     # ------------------------------------------------------------------
     # Vector / full-text search convenience wrappers
     # ------------------------------------------------------------------
 
-    def _knn_table(self, query_vector: np.ndarray, k: int = 10, *, filter: str | None = None, **extra_scan) -> pa.Table:
+    def _knn_table(
+        self,
+        query_vector: np.ndarray,
+        k: int = 10,
+        *,
+        filter: str | None = None,
+        **extra_scan,
+    ) -> pa.Table:
         """Internal helper returning a pyarrow Table with *k* nearest neighbours."""
         nearest_cfg = {"column": "vector", "q": query_vector, "k": k}
         if filter is None:
@@ -1174,7 +1570,14 @@ class FrameDataset:
         # Use scanner so we can combine nearest + filter push-down when provided.
         return self.scanner(nearest=nearest_cfg, filter=filter, **extra_scan).to_table()
 
-    def knn_search(self, query_vector: np.ndarray, k: int = 10, *, filter: str | None = None, **extra_scan) -> list[FrameRecord]:
+    def knn_search(
+        self,
+        query_vector: np.ndarray,
+        k: int = 10,
+        *,
+        filter: str | None = None,
+        **extra_scan,
+    ) -> list[FrameRecord]:
         """Return the *k* nearest neighbours to *query_vector* as FrameRecords.
 
         Parameters
@@ -1192,11 +1595,15 @@ class FrameDataset:
         """
         tbl = self._knn_table(query_vector, k=k, filter=filter, **extra_scan)
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
-    def full_text_search(self, query: str, *, columns: list[str] | None = None, k: int = 100) -> list[FrameRecord]:
+    def full_text_search(
+        self, query: str, *, columns: list[str] | None = None, k: int = 100
+    ) -> list[FrameRecord]:
         """Run a BM25 full-text search.
 
         Parameters
@@ -1211,7 +1618,9 @@ class FrameDataset:
         ftq = {"query": query, "columns": columns or ["text_content"]}
         tbl = self.scanner(full_text_query=ftq, limit=k).to_table()
         return [
-            FrameRecord.from_arrow(tbl.slice(i, 1), dataset_path=Path(self._dataset.uri))
+            FrameRecord.from_arrow(
+                tbl.slice(i, 1), dataset_path=Path(self._dataset.uri)
+            )
             for i in range(tbl.num_rows)
         ]
 
@@ -1303,9 +1712,15 @@ class FrameDataset:
         pa_field = self._dataset.schema.field(column)
         arrow_type = pa_field.type
         import pyarrow as pa  # local import to avoid global dependency issues
-        if pa.types.is_struct(arrow_type) or pa.types.is_list(arrow_type) or pa.types.is_map(arrow_type) or pa.types.is_fixed_size_list(arrow_type):
+
+        if (
+            pa.types.is_struct(arrow_type)
+            or pa.types.is_list(arrow_type)
+            or pa.types.is_map(arrow_type)
+            or pa.types.is_fixed_size_list(arrow_type)
+        ):
             raise ValueError(
                 f"Column {column!r} has non-scalar type {arrow_type} – cannot build scalar index."
             )
         # Delegate to Lance
-        self._native.create_scalar_index(column, replace=replace) 
+        self._native.create_scalar_index(column, replace=replace)

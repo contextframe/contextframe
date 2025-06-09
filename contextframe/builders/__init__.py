@@ -11,19 +11,18 @@ from typing import Any, Dict, Optional
 
 class LazyLoader:
     """Lazy loader for optional modules with clear error messages."""
-    
+
     def __init__(self, module_name: str, package: str, extras_name: str):
         self.module_name = module_name
         self.package = package
         self.extras_name = extras_name
         self._module: Optional[Any] = None
-        
+
     def __getattr__(self, name: str) -> Any:
         if self._module is None:
             try:
                 self._module = importlib.import_module(
-                    f".{self.module_name}", 
-                    package=self.package
+                    f".{self.module_name}", package=self.package
                 )
             except ImportError as e:
                 raise ImportError(
@@ -44,3 +43,4 @@ serve = LazyLoader("serve", __package__, "serve")
 
 
 __all__ = ["extract", "embed", "enhance", "encode", "serve"]
+

@@ -26,4 +26,4 @@ __all__ = [
     "is_valid_uuid",
     "next_version",
     "validate_relationships",
-] 
+]
