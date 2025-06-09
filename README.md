@@ -53,10 +53,40 @@ While ContextFrame defines fields to track document source and relationships, th
 
 ## Installation
 
+### Core Package (Minimal)
 ```bash
-# Requires lance library
+# Core functionality only - fast, lightweight install
 pip install contextframe
 ```
+
+### With Optional Features
+```bash
+# Document extraction (PDF, DOCX, HTML, PPTX, XLSX)
+pip install "contextframe[extract]"
+
+# Embedding generation (OpenAI, Anthropic, Cohere, Sentence Transformers)
+pip install "contextframe[embed]"
+
+# AI-powered enhancement (summarization, metadata extraction)
+pip install "contextframe[enhance]"
+
+# MP4 encoding for universal distribution
+pip install "contextframe[encode]"
+
+# MCP server for LLM/agent integration
+pip install "contextframe[serve]"
+
+# Install everything
+pip install "contextframe[all]"
+```
+
+### Installation Decision Tree
+- **Just managing Lance datasets?** → Use core package
+- **Need to extract content from documents?** → Add `[extract]`
+- **Creating embeddings?** → Add `[embed]`
+- **Using LLMs for enrichment?** → Add `[enhance]`
+- **Distributing datasets as MP4?** → Add `[encode]`
+- **Serving to LLMs via MCP?** → Add `[serve]`
 
 ## Basic Usage (Conceptual)
 
