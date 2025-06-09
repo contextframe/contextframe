@@ -139,10 +139,6 @@ docs/_build/
 *.prof
 profile_results/
 
-# MedProdigy specific
-MedProdigy_prod/
-docs/progress_reports/
-
 # uv
 .uv/
 .uv/cache/
