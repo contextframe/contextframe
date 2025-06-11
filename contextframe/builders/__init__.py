@@ -16,7 +16,7 @@ class LazyLoader:
         self.module_name = module_name
         self.package = package
         self.extras_name = extras_name
-        self._module: Optional[Any] = None
+        self._module: Any | None = None
 
     def __getattr__(self, name: str) -> Any:
         if self._module is None:
@@ -43,4 +43,3 @@ serve = LazyLoader("serve", __package__, "serve")
 
 
 __all__ = ["extract", "embed", "enhance", "encode", "serve"]
-

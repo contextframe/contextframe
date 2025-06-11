@@ -144,6 +144,7 @@ nav:
     - Store Images as Blobs: 'recipes/store_images_blobs.md'
     - S3 Round-Trip: 'recipes/s3_roundtrip.md'
     - Collections & Relationships: 'recipes/collections_relationships.md'
+    - FrameSet Export/Import: 'recipes/frameset_export_import.md'
     - Schema Cheatsheet: 'concepts/schema_cheatsheet.md'
     - FAQ: 'faq.md'
     - Troubleshooting: 'troubleshooting.md'

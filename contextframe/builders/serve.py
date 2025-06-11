@@ -55,8 +55,8 @@ def create_rest_api(dataset_path: str | Path, include_mcp_bridge: bool = True) -
     Returns:
         FastAPI application instance
     """
-    from fastapi import FastAPI
     import uvicorn
+    from fastapi import FastAPI
 
     # Implementation placeholder
     raise NotImplementedError("REST API creation coming soon")
@@ -84,4 +84,3 @@ def serve_dataset(
 
 
 __all__ = ["create_mcp_server", "create_mcp_tools", "create_rest_api", "serve_dataset"]
-
