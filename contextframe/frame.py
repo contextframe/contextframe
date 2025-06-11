@@ -1246,6 +1246,59 @@ class FrameDataset:
         """
         return self.find_by_record_type("frameset")
 
+    def get_frameset_headers(self) -> list[FrameRecord]:
+        """Get all frameset header records in the dataset.
+
+        This is an alias for list_framesets() to match the naming convention
+        in the Linear issue.
+
+        Returns
+        -------
+        List[FrameRecord]
+            All records with record_type='frameset'
+        """
+        return self.list_framesets()
+
+    def get_frameset_frames(self, frameset_uuid: str) -> list[FrameRecord]:
+        """Get all frames referenced by a frameset.
+
+        This method retrieves the actual frame records that are included in
+        the frameset, based on the frame_uuids stored in the frameset's metadata.
+
+        Parameters
+        ----------
+        frameset_uuid:
+            UUID of the frameset
+
+        Returns
+        -------
+        List[FrameRecord]
+            List of frame records included in the frameset
+
+        Raises
+        ------
+        ValueError
+            If the frameset is not found or is not a valid frameset
+        """
+        # Get the frameset record
+        frameset = self.get_frameset(frameset_uuid)
+        if not frameset:
+            raise ValueError(f"FrameSet {frameset_uuid} not found")
+
+        # Extract frame UUIDs from metadata
+        frame_uuids = frameset.metadata.get("frame_uuids", [])
+        if not frame_uuids:
+            return []
+
+        # Retrieve all frames by their UUIDs
+        frames = []
+        for uuid in frame_uuids:
+            frame = self.get_by_uuid(uuid)
+            if frame:
+                frames.append(frame)
+
+        return frames
+
     def find_by_status(self, status: str) -> list[FrameRecord]:
         """Return all records whose ``status`` metadata exactly matches *status*.
 

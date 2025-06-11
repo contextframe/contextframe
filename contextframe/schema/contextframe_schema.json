@@ -301,6 +301,28 @@
           }
         }
       }
+    },
+    "frame_count": {
+      "type": "integer",
+      "description": "Number of frames in this FrameSet (only for frameset record_type)",
+      "minimum": 0
+    },
+    "frame_uuids": {
+      "type": "array",
+      "description": "List of frame UUIDs included in this FrameSet (only for frameset record_type)",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      }
+    },
+    "source_query": {
+      "type": "string",
+      "description": "The query that generated this FrameSet (only for frameset record_type)"
+    },
+    "export_format": {
+      "type": "string",
+      "description": "Preferred export format for this FrameSet (only for frameset record_type)",
+      "enum": ["markdown", "json", "yaml", "claude", "gpt", "langchain"]
     }
   },
   "patternProperties": {
