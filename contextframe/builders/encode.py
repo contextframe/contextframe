@@ -5,8 +5,8 @@ Provides utilities for encoding ContextFrame datasets into MP4 and other
 video formats for universal distribution and archival.
 """
 
-from pathlib import Path
 import numpy as np
+from pathlib import Path
 
 
 def encode_to_mp4(

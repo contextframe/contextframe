@@ -5,7 +5,7 @@ This module provides schema validation and definition functionality for ContextF
 """
 
 # Public re-exports for convenience
-from .contextframe_schema import get_schema, RecordType, MimeTypes  # noqa: F401
+from .contextframe_schema import MimeTypes, RecordType, get_schema  # noqa: F401
 
 __all__ = [
     "get_schema",

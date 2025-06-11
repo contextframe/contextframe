@@ -29,6 +29,9 @@ from .helpers.metadata_utils import (
     next_version,
     validate_relationships,
 )  # noqa: E402
+
+# I/O functionality
+from .io import ExportFormat, FrameSetExporter, FrameSetImporter  # noqa: E402
 from .schema import MimeTypes, RecordType, get_schema  # noqa: E402
 
 # Define version
@@ -63,6 +66,10 @@ __all__ = [
     "get_schema",
     "RecordType",
     "MimeTypes",
+    # I/O functionality
+    "FrameSetExporter",
+    "FrameSetImporter",
+    "ExportFormat",
     # Exceptions
     "ContextFrameError",
     "ValidationError",
