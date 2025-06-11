@@ -24,34 +24,43 @@ from typing import Optional
 def create_parser() -> argparse.ArgumentParser:
     """
     Create the command-line argument parser.
-    
+
     Returns:
         An ArgumentParser object
     """
     parser = argparse.ArgumentParser(
-        description="ContextFrame command-line tools",
-        prog="contextframe"
+        description="ContextFrame command-line tools", prog="contextframe"
     )
-    
+
     # Add version argument
-    parser.add_argument("--version", action="store_true", help="Show version information")
-    
+    parser.add_argument(
+        "--version", action="store_true", help="Show version information"
+    )
+
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
-    
+
     # Info command
-    info_parser = subparsers.add_parser("info", help="Display information about a Lance dataset (.lance dir)")
+    info_parser = subparsers.add_parser(
+        "info", help="Display information about a Lance dataset (.lance dir)"
+    )
     info_parser.add_argument("file", help="Dataset path (.lance directory)")
-    info_parser.add_argument("--json", action="store_true", help="Output in JSON format")
-    
+    info_parser.add_argument(
+        "--json", action="store_true", help="Output in JSON format"
+    )
+
     # Create command
-    create_parser = subparsers.add_parser("create", help="Create a new Lance dataset (.lance dir)")
+    create_parser = subparsers.add_parser(
+        "create", help="Create a new Lance dataset (.lance dir)"
+    )
     create_parser.add_argument("title", help="Document title")
     create_parser.add_argument("--output", "-o", required=True, help="Output file path")
     create_parser.add_argument("--author", help="Document author")
     create_parser.add_argument("--tags", help="Comma-separated list of tags")
     create_parser.add_argument("--content", help="Document content (use - for stdin)")
-    create_parser.add_argument("--content-file", help="File containing document content")
-    
+    create_parser.add_argument(
+        "--content-file", help="File containing document content"
+    )
+
     # Versioning commands
     # version_parser = subparsers.add_parser("version", help="Work with document versions")
     # version_subparsers = version_parser.add_subparsers(dest="version_command", help="Version command")
@@ -62,7 +71,7 @@ def create_parser() -> argparse.ArgumentParser:
     # version_create_parser.add_argument("--version", "-v", help="Version number (e.g., 1.0.0)")
     # version_create_parser.add_argument("--author", "-a", help="Author of this version")
     # version_create_parser.add_argument("--description", "-d", help="Description of changes")
-    # version_create_parser.add_argument("--bump", choices=["major", "minor", "patch"], 
+    # version_create_parser.add_argument("--bump", choices=["major", "minor", "patch"],
     #                                 default="patch", help="Bump version (if --version not specified)")
     #
     # # List versions
@@ -136,33 +145,34 @@ def create_parser() -> argparse.ArgumentParser:
     # concurrent_parser = conflict_subparsers.add_parser("check-concurrent", help="Check if a document has been modified concurrently")
     # concurrent_parser.add_argument("file", help="Path to the document")
     # concurrent_parser.add_argument("--expected-version", help="Expected version (optional)")
-    
+
     return parser
 
 
 def main(args: list[str] | None = None) -> int:
     """
     Main entry point for the CLI.
-    
+
     Args:
         args: Command-line arguments (if None, uses sys.argv)
-        
+
     Returns:
         Exit code (0 for success, non-zero for errors)
     """
     parser = create_parser()
     parsed_args = parser.parse_args(args)
-    
+
     # Handle version flag before checking for command
     if hasattr(parsed_args, 'version') and parsed_args.version:
         from . import __version__
+
         print(f"ContextFrame version {__version__}")
         return 0
-    
+
     if not parsed_args.command:
         parser.print_help()
         return 1
-    
+
     try:
         if parsed_args.command == "info":
             return _handle_info(parsed_args)
@@ -183,15 +193,15 @@ def main(args: list[str] | None = None) -> int:
 def _handle_info(args):
     """Handle the info command."""
     file_path = Path(args.file)
-    
+
     if not file_path.exists():
         print(f"Error: File not found: {file_path}", file=sys.stderr)
         return 1
-    
+
     try:
         # Load the document
         doc = FrameRecord.from_file(file_path)
-        
+
         if args.json:
             # Output as JSON
             info = {
@@ -201,7 +211,7 @@ def _handle_info(args):
                 "updated_at": doc.updated_at,
                 "path": str(doc.path),
                 "tags": doc.tags,
-                "metadata": doc.metadata
+                "metadata": doc.metadata,
             }
             print(json.dumps(info, indent=2))
         else:
@@ -215,16 +225,16 @@ def _handle_info(args):
                 print(f"Updated: {doc.updated_at}")
             if doc.tags:
                 print(f"Tags: {', '.join(doc.tags)}")
-            
+
             # Display metadata count
             meta_count = len(doc.metadata)
             print(f"Metadata: {meta_count} fields")
-            
+
             # Display content stats
             content_lines = doc.content.count("\n") + 1
             content_words = len(doc.content.split())
             print(f"Content: {content_lines} lines, {content_words} words")
-        
+
         return 0
     except Exception as e:
         print(f"Error loading file: {e}", file=sys.stderr)
@@ -237,7 +247,7 @@ def _handle_create(args):
     tag_list = None
     if args.tags:
         tag_list = [tag.strip() for tag in args.tags.split(",")]
-    
+
     # Get content
     content = ""
     if args.content == "-":
@@ -248,16 +258,13 @@ def _handle_create(args):
     elif args.content_file:
         with open(args.content_file, encoding="utf-8") as f:
             content = f.read()
-    
+
     try:
         # Create document
         doc = FrameRecord.create(
-            title=args.title,
-            content=content,
-            author=args.author,
-            tags=tag_list
+            title=args.title, content=content, author=args.author, tags=tag_list
         )
-        
+
         # Save document
         doc.save(args.output)
         print(f"Document created: {args.output}")
@@ -268,4 +275,4 @@ def _handle_create(args):
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

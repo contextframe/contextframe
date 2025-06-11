@@ -15,6 +15,7 @@ validate_relationships     – validate a list of relationship objects
 
 All functions are intentionally *pure* (no I/O).
 """
+
 from __future__ import annotations
 
 import datetime as _dt
@@ -43,7 +44,11 @@ STANDARD_METADATA_FIELDS: dict[str, dict[str, Any]] = {
     "updated_at": {"type": str, "required": False},
     "tags": {"type": list, "required": False},
     "status": {"type": str, "required": False},
-    "record_type": {"type": str, "required": False, "description": "Logical type of row (see RecordType enum)"},
+    "record_type": {
+        "type": str,
+        "required": False,
+        "description": "Logical type of row (see RecordType enum)",
+    },
 }
 
 VALID_RELATIONSHIP_TYPES = {"parent", "child", "related", "reference", "member_of"}
@@ -51,6 +56,7 @@ VALID_RELATIONSHIP_TYPES = {"parent", "child", "related", "reference", "member_o
 # ---------------------------------------------------------------------------
 # Simple primitives
 # ---------------------------------------------------------------------------
+
 
 def generate_uuid() -> str:
     """Generate a fresh v4 UUID as a string."""
@@ -117,6 +123,7 @@ def next_version(current: str, *, version_type: str = "patch") -> str:
         patch += 1
     return f"{major}.{minor}.{patch}"
 
+
 # ---------------------------------------------------------------------------
 # Metadata helpers
 # ---------------------------------------------------------------------------
@@ -124,6 +131,7 @@ def next_version(current: str, *, version_type: str = "patch") -> str:
 DEFAULT_METADATA = {
     "created_at": _dt.date.today().strftime(DATE_FORMAT),
 }
+
 
 def _merge(d1: dict[str, Any], d2: dict[str, Any]) -> dict[str, Any]:
     out = d1.copy()
@@ -135,13 +143,16 @@ def _merge(d1: dict[str, Any], d2: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def create_metadata(base: dict[str, Any] | None = None, **kwargs: Any) -> dict[str, Any]:
+def create_metadata(
+    base: dict[str, Any] | None = None, **kwargs: Any
+) -> dict[str, Any]:
     """Return a new metadata dict with defaults applied and a UUID ensured."""
     meta = _merge(DEFAULT_METADATA, base or {})
     meta = _merge(meta, kwargs)
     if "uuid" not in meta or not is_valid_uuid(meta["uuid"]):
         meta["uuid"] = generate_uuid()
     return meta
+
 
 # ---------------------------------------------------------------------------
 # Relationship helpers
@@ -209,6 +220,7 @@ def validate_relationships(rels: list[dict[str, Any]]) -> None:
         if not any(k in r for k in ("id", "path", "uri", "cid")):
             raise ValueError(f"Relationship missing identifier (id|path|uri|cid): {r}")
 
+
 # ---------------------------------------------------------------------------
 # Public re-exports for package root convenience
 # ---------------------------------------------------------------------------
@@ -229,4 +241,4 @@ __all__ = [
 
 def get_standard_fields():  # noqa: D401
     """Return a copy of the standard metadata fields."""
-    return STANDARD_METADATA_FIELDS.copy() 
+    return STANDARD_METADATA_FIELDS.copy()

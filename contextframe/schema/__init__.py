@@ -11,4 +11,4 @@ __all__ = [
     "get_schema",
     "RecordType",
     "MimeTypes",
-] 
+]

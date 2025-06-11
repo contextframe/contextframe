@@ -124,7 +124,8 @@
       "enum": [
         "document",
         "collection_header",
-        "dataset_header"
+        "dataset_header",
+        "frameset"
       ]
     },
     "raw_data_type": {
@@ -299,6 +300,13 @@
             "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
           }
         }
+      }
+    },
+    "custom_metadata": {
+      "type": "object",
+      "description": "Custom key-value metadata for extensibility",
+      "additionalProperties": {
+        "type": "string"
       }
     }
   },

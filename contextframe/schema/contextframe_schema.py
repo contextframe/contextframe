@@ -8,23 +8,28 @@ DEFAULT_EMBED_DIM = 1536  # Change if you use a different encoder
 # Helper enum values (kept in Python for convenience)
 # ---------------------------------------------------------------------------
 
+
 class RecordType:
     """Enumerated record_type values used in the canonical schema."""
 
     DOCUMENT = "document"
     COLLECTION_HEADER = "collection_header"
     DATASET_HEADER = "dataset_header"
+    FRAMESET = "frameset"
 
     @classmethod
     def choices(cls):  # noqa: D401
-        return [cls.DOCUMENT, cls.COLLECTION_HEADER, cls.DATASET_HEADER]
+        return [cls.DOCUMENT, cls.COLLECTION_HEADER, cls.DATASET_HEADER, cls.FRAMESET]
+
 
 # ---------------------------------------------------------------------------
 # Common MIME Types (Optional Raw Data)
 # ---------------------------------------------------------------------------
 
+
 class MimeTypes:
     """Standardized MIME types for the optional raw_data field."""
+
     # Images
     IMAGE_JPEG = "image/jpeg"
     IMAGE_PNG = "image/png"
@@ -76,9 +81,11 @@ class MimeTypes:
             cls.AUDIO_AAC,
         ]
 
+
 # ---------------------------------------------------------------------------
 # Schema Builder
 # ---------------------------------------------------------------------------
+
 
 def build_schema(embed_dim: int = DEFAULT_EMBED_DIM) -> pa.Schema:  # noqa: D401
     """Return the canonical Arrow schema for a Frame record.
@@ -95,22 +102,24 @@ def build_schema(embed_dim: int = DEFAULT_EMBED_DIM) -> pa.Schema:  # noqa: D401
     """
     # Relationship struct mirrors the JSON schema definition where exactly one
     # of the identifier fields (id | uri | path | cid) must be present.
-    relationship_struct = pa.struct([
-        pa.field("type", pa.string(), nullable=False),
-        pa.field("id", pa.string()),
-        pa.field("uri", pa.string()),
-        pa.field("path", pa.string()),
-        pa.field("cid", pa.string()),
-        pa.field("title", pa.string()),
-        pa.field("description", pa.string()),
-    ])
+    relationship_struct = pa.struct(
+        [
+            pa.field("type", pa.string(), nullable=False),
+            pa.field("id", pa.string()),
+            pa.field("uri", pa.string()),
+            pa.field("path", pa.string()),
+            pa.field("cid", pa.string()),
+            pa.field("title", pa.string()),
+            pa.field("description", pa.string()),
+        ]
+    )
 
     fields = [
         pa.field("uuid", pa.string(), nullable=False),
         pa.field("text_content", pa.string()),
         pa.field(
             "vector",
-            pa.fixed_size_list(pa.float32(), embed_dim),
+            pa.list_(pa.float32(), list_size=embed_dim),
         ),
         pa.field("title", pa.string(), nullable=False),
         pa.field("version", pa.string()),
@@ -135,7 +144,10 @@ def build_schema(embed_dim: int = DEFAULT_EMBED_DIM) -> pa.Schema:  # noqa: D401
         pa.field("source_type", pa.string()),
         pa.field("source_url", pa.string()),
         pa.field("relationships", pa.list_(relationship_struct)),
-        pa.field("custom_metadata", pa.map_(pa.string(), pa.string())),
+        pa.field("custom_metadata", pa.list_(pa.struct([
+            pa.field("key", pa.string()),
+            pa.field("value", pa.string())
+        ]))),
         pa.field("record_type", pa.string()),
         # Optional fields for raw multimodal data
         pa.field("raw_data_type", pa.string()),  # MIME type (e.g., "image/jpeg")
@@ -164,4 +176,5 @@ def get_schema(*, embed_dim: int | None = None) -> pa.Schema:  # noqa: D401
             globals()["_CACHED_SCHEMA"] = {}
         _CACHED_SCHEMA[dim] = build_schema(dim)
         cached = _CACHED_SCHEMA[dim]
-    return cached 
+    return cached
+

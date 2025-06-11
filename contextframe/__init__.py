@@ -34,11 +34,14 @@ from .schema import MimeTypes, RecordType, get_schema  # noqa: E402
 # Define version
 __version__ = "0.1.0"
 
+
 # CLI entry point
 def cli():
     """Command-line interface entry point."""
     from .cli import main
+
     main()
+
 
 # Public re-exports
 __all__ = [
