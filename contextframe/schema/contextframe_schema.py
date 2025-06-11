@@ -144,7 +144,10 @@ def build_schema(embed_dim: int = DEFAULT_EMBED_DIM) -> pa.Schema:  # noqa: D401
         pa.field("source_type", pa.string()),
         pa.field("source_url", pa.string()),
         pa.field("relationships", pa.list_(relationship_struct)),
-        pa.field("custom_metadata", pa.map_(pa.string(), pa.string())),
+        pa.field("custom_metadata", pa.list_(pa.struct([
+            pa.field("key", pa.string()),
+            pa.field("value", pa.string())
+        ]))),
         pa.field("record_type", pa.string()),
         # Optional fields for raw multimodal data
         pa.field("raw_data_type", pa.string()),  # MIME type (e.g., "image/jpeg")

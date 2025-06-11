@@ -302,6 +302,13 @@
         }
       }
     },
+    "custom_metadata": {
+      "type": "object",
+      "description": "Custom key-value metadata for extensibility",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
     "frame_count": {
       "type": "integer",
       "description": "Number of frames in this FrameSet (only for frameset record_type)",
