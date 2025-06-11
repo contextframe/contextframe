@@ -37,7 +37,7 @@ ContextFrame addresses these challenges by leveraging the `.lance` format's stre
 -   **Lance-Based**: Built on the high-performance, version-aware `.lance` format.
 -   **Rich, Editable & Standardized Metadata**: Comprehensive schema for essential document details, including provenance, collections, status, **and importantly, user-editable fields (`context`, `custom_metadata`) for adding workflow-specific relevance and annotations.**
 -   **Optional Raw Multimodal Data**  Store raw binary data (images, audio, video, PDFs, etc.) directly in the dataset using the **`raw_data`** (bytes) and **`raw_data_type`** (IANA MIME type) columns added to the canonical schema.  A helper `MimeTypes` enum under `contextframe.schema` exposes common constants (e.g., `MimeTypes.IMAGE_JPEG`).
--   **Explicit Record Typing**  The `RecordType` enum (`contextframe.schema.RecordType`) provides canonical constants (`DOCUMENT`, `COLLECTION_HEADER`, `DATASET_HEADER`).
+-   **Explicit Record Typing**  The `RecordType` enum (`contextframe.schema.RecordType`) provides canonical constants (`DOCUMENT`, `COLLECTION_HEADER`, `DATASET_HEADER`, `FRAMESET`).
 -   **Explicit Relationships**: Dedicated schema support and helpers for defining connections between documents.
 -   **Vector Embedding Support**: Natively handles vector embeddings alongside text and metadata.
 -   **Schema Validation**: Ensures data consistency and integrity against the ContextFrame specification.

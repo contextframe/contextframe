@@ -51,7 +51,7 @@ STANDARD_METADATA_FIELDS: dict[str, dict[str, Any]] = {
     },
 }
 
-VALID_RELATIONSHIP_TYPES = {"parent", "child", "related", "reference", "member_of"}
+VALID_RELATIONSHIP_TYPES = {"parent", "child", "related", "reference", "member_of", "contains"}
 
 # ---------------------------------------------------------------------------
 # Simple primitives

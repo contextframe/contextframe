@@ -1320,6 +1320,92 @@ class FrameDataset:
         """
         return self.find_by_record_type("frameset")
 
+    def get_frameset_headers(self) -> list[FrameRecord]:
+        """Get all frameset header records in the dataset.
+
+        This is an alias for list_framesets() to match the naming convention
+        in the Linear issue.
+
+        Returns
+        -------
+        List[FrameRecord]
+            All records with record_type='frameset'
+        """
+        return self.list_framesets()
+
+    def get_frameset_frames(self, frameset_uuid: str) -> list[FrameRecord]:
+        """Get all frames referenced by a frameset.
+
+        This method retrieves the actual frame records that are included in
+        the frameset, based on the relationships stored in the frameset's metadata.
+
+        Parameters
+        ----------
+        frameset_uuid:
+            UUID of the frameset
+
+        Returns
+        -------
+        List[FrameRecord]
+            List of frame records included in the frameset
+
+        Raises
+        ------
+        ValueError
+            If the frameset is not found or is not a valid frameset
+        """
+        # Get the frameset record
+        frameset = self.get_frameset(frameset_uuid)
+        if not frameset:
+            raise ValueError(f"FrameSet {frameset_uuid} not found")
+
+        # Extract frame UUIDs from relationships
+        # Framesets use the "contains" relationship type to reference their member frames
+        # This allows us to track which documents are part of the frameset while
+        # keeping frameset-specific metadata (like source_query) in custom_metadata
+        frames = []
+        for rel in frameset.metadata.get("relationships", []):
+            if rel.get("type") == "contains" and rel.get("id"):
+                frame = self.get_by_uuid(rel["id"])
+                if frame:
+                    frames.append(frame)
+
+        return frames
+
+    def get_frameset_frame_count(self, frameset_uuid: str) -> int:
+        """Get the number of frames in a frameset.
+
+        This method counts the number of "contains" relationships in the frameset,
+        which is more reliable than storing a static count that could become
+        out of sync.
+
+        Parameters
+        ----------
+        frameset_uuid:
+            UUID of the frameset
+
+        Returns
+        -------
+        int
+            Number of frames contained in the frameset
+
+        Raises
+        ------
+        ValueError
+            If the frameset is not found
+        """
+        frameset = self.get_frameset(frameset_uuid)
+        if not frameset:
+            raise ValueError(f"FrameSet {frameset_uuid} not found")
+
+        # Count relationships with type="contains"
+        count = 0
+        for rel in frameset.metadata.get("relationships", []):
+            if rel.get("type") == "contains":
+                count += 1
+
+        return count
+
     def find_by_status(self, status: str) -> list[FrameRecord]:
         """Return all records whose ``status`` metadata exactly matches *status*.
 

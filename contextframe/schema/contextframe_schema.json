@@ -153,7 +153,8 @@
               "parent",
               "child",
               "related",
-              "reference"
+              "reference",
+              "contains"
             ]
           },
           "id": {

@@ -291,3 +291,92 @@ def test_frameset_record_type_enum():
     assert hasattr(RecordType, 'FRAMESET')
     assert RecordType.FRAMESET == "frameset"
     assert "frameset" in RecordType.choices()
+
+
+def test_get_frameset_headers(temp_dataset):
+    """Test retrieving all frameset headers."""
+    ds, docs = temp_dataset
+    
+    # Create multiple framesets
+    frameset1 = ds.create_frameset(
+        title="Analysis 1",
+        content="First analysis",
+        source_records=[(docs[0].uuid, "excerpt")]
+    )
+    
+    frameset2 = ds.create_frameset(
+        title="Analysis 2", 
+        content="Second analysis",
+        source_records=[(docs[1].uuid, "excerpt")]
+    )
+    
+    # Get all frameset headers
+    headers = ds.get_frameset_headers()
+    assert len(headers) == 2
+    
+    # Check that both framesets are included
+    header_uuids = [h.uuid for h in headers]
+    assert frameset1.uuid in header_uuids
+    assert frameset2.uuid in header_uuids
+    
+    # Verify they are all framesets
+    for header in headers:
+        assert header.metadata.get("record_type") == "frameset"
+
+
+def test_get_frameset_frames(temp_dataset):
+    """Test retrieving frames referenced by a frameset."""
+    ds, docs = temp_dataset
+    
+    # Create a frameset with relationships to frames
+    frameset = FrameRecord.create(
+        title="Test FrameSet with Frames",
+        content="This frameset references specific frames",
+        record_type=RecordType.FRAMESET,
+        custom_metadata={
+            "source_query": "test query"
+        }
+    )
+    
+    # Add relationships to the frames
+    frameset.add_relationship(docs[0].uuid, relationship_type="contains", title=docs[0].title)
+    frameset.add_relationship(docs[1].uuid, relationship_type="contains", title=docs[1].title)
+    
+    ds.add(frameset)
+    
+    # Get the frames referenced by this frameset
+    frames = ds.get_frameset_frames(frameset.uuid)
+    assert len(frames) == 2
+    
+    # Verify the correct frames were returned
+    frame_uuids = [f.uuid for f in frames]
+    assert docs[0].uuid in frame_uuids
+    assert docs[1].uuid in frame_uuids
+    
+    # Test the frame count method
+    count = ds.get_frameset_frame_count(frameset.uuid)
+    assert count == 2
+    
+    # Test with empty frameset (no relationships)
+    empty_frameset = FrameRecord.create(
+        title="Empty FrameSet",
+        content="No frames",
+        record_type=RecordType.FRAMESET,
+        custom_metadata={}
+    )
+    ds.add(empty_frameset)
+    
+    frames = ds.get_frameset_frames(empty_frameset.uuid)
+    assert len(frames) == 0
+    
+    # Test frame count for empty frameset
+    count = ds.get_frameset_frame_count(empty_frameset.uuid)
+    assert count == 0
+    
+    # Test with non-existent frameset
+    with pytest.raises(ValueError, match="FrameSet .* not found"):
+        ds.get_frameset_frames("non-existent-uuid")
+    
+    # Test frame count with non-existent frameset
+    with pytest.raises(ValueError, match="FrameSet .* not found"):
+        ds.get_frameset_frame_count("non-existent-uuid")
