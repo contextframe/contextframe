@@ -20,6 +20,7 @@ from typing import Any, Optional, Union
 
 try:
     import lance
+    from lance.dataset import write_dataset
 except ModuleNotFoundError as exc:
     raise ImportError(
         "lance is required for contextframe.frame. Please install contextframe with the 'lance' extra."
@@ -178,11 +179,14 @@ class FrameRecord:
                 arrays[name] = pa.array([meta["tags"]], type=field.type)
             elif name == "relationships" and "relationships" in meta:
                 arrays[name] = pa.array([meta["relationships"]], type=field.type)
-            elif name == "custom_metadata" and "custom_metadata" in meta:
-                # Convert dict → map
-                arrays[name] = pa.array(
-                    [list(meta["custom_metadata"].items())], type=field.type
-                )
+            elif name == "custom_metadata":
+                # Convert dict to list of key-value structs for Lance compatibility
+                custom_meta = meta.get("custom_metadata", {})
+                if custom_meta:
+                    kv_list = [{"key": k, "value": v} for k, v in custom_meta.items()]
+                else:
+                    kv_list = []
+                arrays[name] = pa.array([kv_list], type=field.type)
             else:
                 # Scalar fields directly from metadata or None
                 arrays[name] = self._arrowify_scalar(name, meta.get(name), field.type)
@@ -211,18 +215,48 @@ class FrameRecord:
         vector_list = tbl["vector"][0]
         vector = np.array(vector_list, dtype=np.float32)
         text_content = tbl["text_content"][0]
-        metadata: dict[str, Any] = {
-            k: v[0] if isinstance(v, list) else v
-            for k, v in tbl.items()
-            if k not in {"text_content", "vector"}
-        }
-        # Convert Map to dict
+        # Extract metadata, handling missing fields gracefully
+        metadata: dict[str, Any] = {}
+        for k, v in tbl.items():
+            if k in {"text_content", "vector", "raw_data", "raw_data_type"}:
+                continue
+            # Handle list values (from pydict conversion)
+            value = v[0] if isinstance(v, list) and len(v) > 0 else v
+            # Don't include None values in metadata
+            if value is not None:
+                metadata[k] = value
+        # Convert list of key-value structs back to dict
         if "custom_metadata" in metadata and metadata["custom_metadata"] is not None:
-            metadata["custom_metadata"] = dict(metadata["custom_metadata"])
+            kv_list = metadata["custom_metadata"]
+            if kv_list:
+                metadata["custom_metadata"] = {
+                    item["key"]: item["value"] for item in kv_list
+                }
+            else:
+                metadata["custom_metadata"] = {}
+        else:
+            metadata["custom_metadata"] = {}
+
+        # Clean up relationships - remove None values from struct fields
+        if "relationships" in metadata and metadata["relationships"]:
+            cleaned_relationships = []
+            for rel in metadata["relationships"]:
+                # Only include non-None fields in the relationship
+                cleaned_rel = {k: v for k, v in rel.items() if v is not None}
+                cleaned_relationships.append(cleaned_rel)
+            metadata["relationships"] = cleaned_relationships
 
         # Extract raw data fields if present
-        raw_data = tbl.get("raw_data", [None])[0]
-        raw_data_type = tbl.get("raw_data_type", [None])[0]
+        # Handle case where raw_data might not be in the table (e.g., excluded from scan)
+        if "raw_data" in tbl:
+            raw_data = tbl.get("raw_data", [None])[0]
+        else:
+            raw_data = None
+
+        if "raw_data_type" in tbl:
+            raw_data_type = tbl.get("raw_data_type", [None])[0]
+        else:
+            raw_data_type = None
 
         # Determine embed_dim from the loaded vector
         current_embed_dim = (
@@ -443,7 +477,7 @@ class FrameRecord:
     ) -> FrameRecord:
         """Load a specific row identified by *uuid* from a Lance dataset."""
         ds = FrameDataset.open(dataset_path)
-        tbl = ds._native.scanner(filter=f"uuid = '{uuid}'").to_table()
+        tbl = ds.scanner(filter=f"uuid = '{uuid}'").to_table()
         if tbl.num_rows != 1:
             raise ValueError(
                 f"Expected exactly one row with uuid={uuid!r} in dataset {dataset_path}, "
@@ -570,6 +604,26 @@ class FrameDataset:
     def __init__(self, dataset: lance.LanceDataset) -> None:
         """Initialize a FrameDataset with a Lance dataset."""
         self._dataset = dataset
+        self._non_blob_columns = self._get_non_blob_columns()
+
+    def _get_non_blob_columns(self) -> list[str] | None:
+        """Get list of columns that are not blob-encoded.
+
+        Lance doesn't support scanning blob columns directly, so we need
+        to exclude them from projections when using filters.
+        """
+        schema = self._dataset.schema
+        non_blob_cols = []
+        has_blob = False
+
+        for field in schema:
+            if field.metadata and field.metadata.get(b"lance-encoding:blob") == b"true":
+                has_blob = True
+            else:
+                non_blob_cols.append(field.name)
+
+        # Return None if there are no blob columns (so scanner uses default projection)
+        return non_blob_cols if has_blob else None
 
     # ------------------------------------------------------------------
     # Constructors
@@ -618,9 +672,9 @@ class FrameDataset:
         # `write_dataset` will create or overwrite based on directory state.
         # We wiped any existing dir in caller, so simply write.
         if storage_options is None:
-            ds = lance.write_dataset(tbl, raw_uri, schema=schema)
+            ds = write_dataset(tbl, raw_uri, schema=schema)
         else:
-            ds = lance.write_dataset(
+            ds = write_dataset(
                 tbl, raw_uri, schema=schema, storage_options=storage_options
             )
         return cls(ds)
@@ -719,9 +773,12 @@ class FrameDataset:
             The number of rows deleted (``0`` if no matching record was found,
             ``1`` in the expected successful case).
         """
-        # Delegate to Lance which returns the count of deleted rows.
-        count: int = self._dataset.delete(f"uuid = '{uuid}'")
-        return count
+        # Delegate to Lance. Note: Lance delete returns None, not a count
+        # We need to count before and after to determine how many were deleted
+        count_before = self._dataset.count_rows()
+        self._dataset.delete(f"uuid = '{uuid}'")
+        count_after = self._dataset.count_rows()
+        return count_before - count_after
 
     def update_record(self, record: FrameRecord) -> None:
         """Update an existing record in-place.
@@ -750,7 +807,7 @@ class FrameDataset:
             raise ValueError(f"Invalid metadata: {errs}")
 
         # Remove the existing record and sanity-check the outcome.
-        delete_count: int = self._dataset.delete(f"uuid = '{record.uuid}'")
+        delete_count = self.delete_record(record.uuid)
         if delete_count == 0:
             raise ValueError(
                 f"No record found with uuid={record.uuid!r} – cannot update."
@@ -790,7 +847,7 @@ class FrameDataset:
         # Attempt to remove any existing row(s).  We intentionally ignore the
         # returned count here because *upsert* semantics do not care whether
         # a previous record was present.
-        self._dataset.delete(f"uuid = '{record.uuid}'")
+        self.delete_record(record.uuid)
 
         # Insert the (new or replacement) record.
         self.add(record)
@@ -822,10 +879,16 @@ class FrameDataset:
         Optional[FrameRecord]
             The record if found, None otherwise
         """
-        tbl = self.scanner(filter=f"uuid = '{uuid}'").to_table()
+        # Use non-blob columns to avoid Lance scanning limitation
+        tbl = self.scanner(
+            filter=f"uuid = '{uuid}'", columns=self._non_blob_columns
+        ).to_table()
+
         if tbl.num_rows == 0:
             return None
         elif tbl.num_rows == 1:
+            # Note: raw_data will be None since we can't scan blob columns
+            # In the future, we could use take_blobs if needed
             return FrameRecord.from_arrow(tbl, dataset_path=Path(self._dataset.uri))
         else:
             raise ValueError(
@@ -837,7 +900,18 @@ class FrameDataset:
     # ------------------------------------------------------------------
 
     def scanner(self, **scan_kwargs):
-        """Return a LanceScanner for custom queries."""
+        """Return a LanceScanner for custom queries.
+
+        Note: If a filter is provided and the dataset has blob columns,
+        those columns will be automatically excluded from the projection
+        to avoid Lance's limitation on scanning blob columns.
+        """
+        # If there's a filter and we have blob columns, exclude them
+        if 'filter' in scan_kwargs and self._non_blob_columns is not None:
+            # Only override columns if not explicitly set by user
+            if 'columns' not in scan_kwargs:
+                scan_kwargs['columns'] = self._non_blob_columns
+
         return self._dataset.scanner(**scan_kwargs)
 
     # ------------------------------------------------------------------
@@ -1374,6 +1448,8 @@ class FrameDataset:
                         )
                     )
                     break  # no need to inspect further relationships
+
+        return records
 
     # ------------------------------------------------------------------
     # Additional scalar metadata helpers

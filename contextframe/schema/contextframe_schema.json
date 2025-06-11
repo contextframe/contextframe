@@ -301,6 +301,13 @@
           }
         }
       }
+    },
+    "custom_metadata": {
+      "type": "object",
+      "description": "Custom key-value metadata for extensibility",
+      "additionalProperties": {
+        "type": "string"
+      }
     }
   },
   "patternProperties": {
