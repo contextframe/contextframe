@@ -328,16 +328,20 @@ def test_get_frameset_frames(temp_dataset):
     """Test retrieving frames referenced by a frameset."""
     ds, docs = temp_dataset
     
-    # Create a frameset with specific metadata
+    # Create a frameset with relationships to frames
     frameset = FrameRecord.create(
         title="Test FrameSet with Frames",
         content="This frameset references specific frames",
         record_type=RecordType.FRAMESET,
-        frame_count=2,
-        frame_uuids=[docs[0].uuid, docs[1].uuid],
-        source_query="test query",
-        export_format="markdown"
+        custom_metadata={
+            "source_query": "test query"
+        }
     )
+    
+    # Add relationships to the frames
+    frameset.add_relationship(docs[0].uuid, relationship_type="contains", title=docs[0].title)
+    frameset.add_relationship(docs[1].uuid, relationship_type="contains", title=docs[1].title)
+    
     ds.add(frameset)
     
     # Get the frames referenced by this frameset
@@ -349,19 +353,30 @@ def test_get_frameset_frames(temp_dataset):
     assert docs[0].uuid in frame_uuids
     assert docs[1].uuid in frame_uuids
     
-    # Test with empty frame_uuids
+    # Test the frame count method
+    count = ds.get_frameset_frame_count(frameset.uuid)
+    assert count == 2
+    
+    # Test with empty frameset (no relationships)
     empty_frameset = FrameRecord.create(
         title="Empty FrameSet",
         content="No frames",
         record_type=RecordType.FRAMESET,
-        frame_count=0,
-        frame_uuids=[]
+        custom_metadata={}
     )
     ds.add(empty_frameset)
     
     frames = ds.get_frameset_frames(empty_frameset.uuid)
     assert len(frames) == 0
     
+    # Test frame count for empty frameset
+    count = ds.get_frameset_frame_count(empty_frameset.uuid)
+    assert count == 0
+    
     # Test with non-existent frameset
     with pytest.raises(ValueError, match="FrameSet .* not found"):
         ds.get_frameset_frames("non-existent-uuid")
+    
+    # Test frame count with non-existent frameset
+    with pytest.raises(ValueError, match="FrameSet .* not found"):
+        ds.get_frameset_frame_count("non-existent-uuid")
