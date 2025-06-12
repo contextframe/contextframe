@@ -43,7 +43,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["contextframe", "contextframe.examples", "contextframe.helpers", "contextframe.schema"]
+packages = ["contextframe", "contextframe.examples", "contextframe.helpers", "contextframe.schema", "contextframe.extract"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.md", "*.py"]
@@ -58,11 +58,8 @@ dev = [
     "deptry>=0.12.0",
 ]
 extract = [
-    "pypdf2>=3.0.0",
-    "python-docx>=1.0.0",
-    "beautifulsoup4>=4.12.0",
-    "python-pptx>=0.6.0",
-    "openpyxl>=3.1.0",
+    "llama-index-core>=0.11.0",
+    "litellm>=1.0.0",
 ]
 embed = [
     "sentence-transformers>=2.2.0",
