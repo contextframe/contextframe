@@ -43,7 +43,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["contextframe", "contextframe.examples", "contextframe.helpers", "contextframe.schema", "contextframe.extract"]
+packages = ["contextframe", "contextframe.examples", "contextframe.helpers", "contextframe.schema", "contextframe.io", "contextframe.builders", "contextframe.extract", "contextframe.embed"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.md", "*.py"]
