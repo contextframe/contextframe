@@ -43,6 +43,8 @@ ContextFrame addresses these challenges by leveraging the `.lance` format's stre
 -   **Schema Validation**: Ensures data consistency and integrity against the ContextFrame specification.
 -   **Pythonic API**: Provides intuitive classes (`FrameRecord`, `FrameDataset`) for interacting with ContextFrame data.
 -   **Full CRUD Helpers**: Built-in `.update_record`, `.delete_record`, and `.upsert_record` methods enable convenient record modifications.
+-   **Document Extraction**: Native extractors for common formats (text, JSON, CSV, YAML) with lightweight Rust-based chunking via `semantic-text-splitter`. Supports integration patterns for advanced extraction tools (Docling, Unstructured.io, Chunkr, Reducto).
+-   **Embedding Generation**: Unified embedding interface through LiteLLM supporting 100+ providers (OpenAI, Anthropic, Cohere, local models via Ollama, etc.) with automatic batching and fallback strategies.
 -   **Lightweight Abstraction**: Focuses on schema, validation, and usability, relying on the underlying `lance` library for core storage and query operations.
 
 ## Core vs Extended Functionality

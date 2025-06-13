@@ -43,7 +43,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["contextframe", "contextframe.examples", "contextframe.helpers", "contextframe.schema"]
+packages = ["contextframe", "contextframe.examples", "contextframe.helpers", "contextframe.schema", "contextframe.io", "contextframe.builders", "contextframe.extract", "contextframe.embed"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.md", "*.py"]
@@ -58,11 +58,30 @@ dev = [
     "deptry>=0.12.0",
 ]
 extract = [
-    "pypdf2>=3.0.0",
-    "python-docx>=1.0.0",
-    "beautifulsoup4>=4.12.0",
-    "python-pptx>=0.6.0",
-    "openpyxl>=3.1.0",
+    "semantic-text-splitter>=0.3.0",
+    "litellm>=1.0.0",
+    "tokenizers>=0.13.0",
+    "tree-sitter>=0.20.0",
+    # Common programming languages
+    "tree-sitter-python>=0.20.0",
+    "tree-sitter-javascript>=0.20.0",
+    "tree-sitter-typescript>=0.20.0",
+    "tree-sitter-rust>=0.20.0",
+    "tree-sitter-go>=0.19.0",
+    "tree-sitter-cpp>=0.20.0",
+    "tree-sitter-c>=0.20.0",
+    "tree-sitter-java>=0.20.0",
+    "tree-sitter-ruby>=0.20.0",
+    "tree-sitter-php>=0.19.0",
+    # Markup and config languages
+    "tree-sitter-html>=0.19.0",
+    "tree-sitter-css>=0.19.0",
+    "tree-sitter-json>=0.19.0",
+    "tree-sitter-yaml>=0.5.0",
+    "tree-sitter-toml>=0.5.0",
+    "tree-sitter-xml>=0.6.0",
+    # Shell and scripting
+    "tree-sitter-bash>=0.19.0",
 ]
 embed = [
     "sentence-transformers>=2.2.0",

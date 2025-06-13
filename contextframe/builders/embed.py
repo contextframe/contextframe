@@ -5,6 +5,9 @@ Provides utilities for generating embeddings from text using various
 embedding models and services.
 """
 
+import os
+from typing import List, Optional, Union
+
 import numpy as np
 
 
