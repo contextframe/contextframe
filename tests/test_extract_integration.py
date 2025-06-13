@@ -202,8 +202,8 @@ This is the readme file.""")
         extractor = TextFileExtractor()
         result = extractor.extract(long_file)
         
-        # Chunk the results (mocking since we don't have llama-index installed)
-        # In real usage, this would use llama_index_splitter
+        # Chunk the results (mocking since we don't have semantic-text-splitter installed)
+        # In real usage, this would use semantic_splitter
         def mock_splitter(texts, chunk_size=100, chunk_overlap=20):
             chunks = []
             for idx, text in enumerate(texts):

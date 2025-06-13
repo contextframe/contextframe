@@ -450,7 +450,7 @@ class TestBatchExtractor:
 class TestChunking:
     """Test chunking functionality."""
     
-    @patch("contextframe.extract.chunking.llama_index_splitter")
+    @patch("contextframe.extract.chunking.semantic_splitter")
     def test_split_extraction_results(self, mock_splitter):
         """Test splitting of extraction results."""
         # Mock the splitter to return predictable chunks
