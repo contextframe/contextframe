@@ -702,10 +702,11 @@ class FrameDataset:
             for the full list of supported keys.
         """
         raw_uri = str(path)
+        from lance.dataset import LanceDataset
         if storage_options is None:
-            ds = lance.dataset(raw_uri, version=version)
+            ds = LanceDataset(raw_uri, version=version)
         else:
-            ds = lance.dataset(
+            ds = LanceDataset(
                 raw_uri, version=version, storage_options=storage_options
             )
         return cls(ds)
@@ -851,6 +852,86 @@ class FrameDataset:
 
         # Insert the (new or replacement) record.
         self.add(record)
+
+    def enrich(
+        self,
+        enrichments: dict[str, str | dict[str, Any]],
+        filter: str | None = None,
+        skip_existing: bool = True,
+        batch_size: int = 10,
+        show_progress: bool = True,
+        model: str = "gpt-4o-mini",
+        **enricher_kwargs,
+    ) -> list[Any]:
+        """Enrich documents in the dataset using LLM-powered analysis.
+        
+        This convenience method provides easy access to the enrichment
+        functionality, allowing AI agents and users to populate schema
+        fields with meaningful metadata.
+        
+        Parameters
+        ----------
+        enrichments:
+            Map of field_name -> prompt or config dict. Example:
+            {
+                "context": "Summarize in 2 sentences",
+                "tags": "Extract 5 topic tags",
+                "custom_metadata": {
+                    "prompt": "Extract technical details as JSON",
+                    "format": "json"
+                }
+            }
+        filter:
+            Optional Lance SQL filter to select documents
+        skip_existing:
+            Whether to skip fields that already have values
+        batch_size:
+            Number of documents to process at once
+        show_progress:
+            Whether to show progress bar
+        model:
+            LLM model to use for enrichment
+        **enricher_kwargs:
+            Additional arguments for ContextEnricher
+            
+        Returns
+        -------
+        list[EnrichmentResult]
+            Results of the enrichment operations
+            
+        Examples
+        --------
+        >>> # Basic enrichment
+        >>> dataset.enrich({
+        ...     "context": "Explain what this document teaches",
+        ...     "tags": "Extract technology and concept tags"
+        ... })
+        
+        >>> # Custom metadata extraction
+        >>> dataset.enrich({
+        ...     "custom_metadata": {
+        ...         "prompt": "Rate complexity 1-5 and list main topics",
+        ...         "format": "json"
+        ...     }
+        ... }, filter="context IS NULL")
+        
+        >>> # Using different model
+        >>> dataset.enrich(
+        ...     {"context": "Summarize for AI developers"},
+        ...     model="anthropic/claude-3-haiku"
+        ... )
+        """
+        from contextframe.enrich import ContextEnricher
+        
+        enricher = ContextEnricher(model=model, **enricher_kwargs)
+        return enricher.enrich_dataset(
+            self,
+            enrichments=enrichments,
+            filter=filter,
+            skip_existing=skip_existing,
+            batch_size=batch_size,
+            show_progress=show_progress
+        )
 
     # ------------------------------------------------------------------
     # Query helpers
@@ -1886,3 +1967,53 @@ class FrameDataset:
             )
         # Delegate to Lance
         self._native.create_scalar_index(column, replace=replace)
+    
+    def enhance(
+        self,
+        enhancements: dict[str, str | dict[str, Any]],
+        filter: str | None = None,
+        batch_size: int = 10,
+        skip_existing: bool = True,
+        show_progress: bool = True,
+        provider: str = "openai",
+        model: str = "gpt-4o-mini",
+        **kwargs
+    ) -> list[Any]:
+        """Enhance documents in the dataset with LLM-generated metadata.
+        
+        This is a convenience method that wraps ContextEnhancer functionality.
+        
+        Args:
+            enhancements: Map of field_name -> prompt or config dict
+            filter: Optional Lance SQL filter
+            batch_size: Number of documents to process at once
+            skip_existing: Whether to skip already-enhanced fields
+            show_progress: Whether to show progress bar
+            provider: LLM provider (openai, anthropic, etc.)
+            model: Model name
+            **kwargs: Additional provider-specific arguments
+            
+        Returns:
+            List of enhancement results
+            
+        Example:
+            >>> dataset.enhance({
+            ...     "context": "Summarize what this document teaches",
+            ...     "tags": "Extract key technical concepts",
+            ...     "custom_metadata": {
+            ...         "prompt": "Extract author and date if mentioned",
+            ...         "format": "json"
+            ...     }
+            ... })
+        """
+        from contextframe.enhance import ContextEnhancer
+        
+        enhancer = ContextEnhancer(provider=provider, model=model, **kwargs)
+        return enhancer.enhance_dataset(
+            self,
+            enhancements=enhancements,
+            filter=filter,
+            batch_size=batch_size,
+            skip_existing=skip_existing,
+            show_progress=show_progress
+        )
