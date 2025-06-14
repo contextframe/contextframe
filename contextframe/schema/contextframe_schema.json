@@ -132,6 +132,7 @@
         "type": "string",
         "description": "IANA MIME type of the embedded raw_data (e.g., image/jpeg, audio/wav). Required if raw_data is present."
 
+
       },
     "raw_data": {
       "type": "string",

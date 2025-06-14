@@ -203,8 +203,8 @@ class TestContextEnhancer:
             }
         )
         
-        assert enhanced.context == "A guide to RAG architecture"
-        assert enhanced.tags == ["RAG", "LLM", "retrieval"]
+        assert enhanced.metadata.get("context") == "A guide to RAG architecture"
+        assert enhanced.metadata.get("tags") == ["RAG", "LLM", "retrieval"]
     
     def test_field_has_value(self):
         """Test checking if fields have values."""
@@ -213,13 +213,13 @@ class TestContextEnhancer:
         frame = FrameRecord.create(title="Test", uri="test.md")
         assert not enhancer._field_has_value(frame, "context")
         
-        frame.context = "Some context"
+        frame.metadata["context"] = "Some context"
         assert enhancer._field_has_value(frame, "context")
         
-        frame.tags = []
+        frame.metadata["tags"] = []
         assert not enhancer._field_has_value(frame, "tags")
         
-        frame.tags = ["tag1"]
+        frame.metadata["tags"] = ["tag1"]
         assert enhancer._field_has_value(frame, "tags")
 
 
@@ -352,6 +352,14 @@ class TestFrameDatasetEnhance:
     @patch('contextframe.enhance.base.llm.call')
     def test_dataset_enhance_method(self, mock_llm_call):
         """Test the convenience enhance method on FrameDataset."""
+        import shutil
+        from pathlib import Path
+        
+        # Clean up any existing test dataset
+        test_path = Path("test_enhance.lance")
+        if test_path.exists():
+            shutil.rmtree(test_path)
+        
         def mock_decorator(provider, model, response_model, **kwargs):
             def decorator(func):
                 def wrapper(messages):
@@ -373,13 +381,21 @@ class TestFrameDatasetEnhance:
         dataset.add(frame)
         
         # Use the enhance method
-        dataset.enhance({
+        results = dataset.enhance({
             "context": "Add a test context"
         })
         
-        # Verify enhancement
-        enhanced = list(dataset.iter_records())[0]
-        assert enhanced.context == "Test context"
+        # Check that enhancement results show success
+        assert len(results) == 1
+        assert results[0].success
+        assert results[0].field_name == "context"
+        assert results[0].value == "Test context"
+        
+        # Verify enhancement by reading back from dataset
+        # Since we're using Lance's update method, we need to re-read the record
+        enhanced_record = dataset.get_by_uuid(frame.uuid)
+        assert enhanced_record is not None
+        assert enhanced_record.metadata.get("context") == "Test context"
         
         # Cleanup
         import shutil
@@ -392,6 +408,14 @@ class TestEnhancementIntegration:
     @patch('contextframe.enhance.base.llm.call')
     def test_full_enhancement_workflow(self, mock_llm_call):
         """Test complete enhancement workflow."""
+        import shutil
+        from pathlib import Path
+        
+        # Clean up any existing test dataset
+        test_path = Path("integration_test.lance")
+        if test_path.exists():
+            shutil.rmtree(test_path)
+            
         call_count = 0
         
         def mock_decorator(provider, model, response_model, **kwargs):
@@ -439,11 +463,19 @@ class TestEnhancementIntegration:
             }
         )
         
-        # Verify
-        enhanced = list(dataset.iter_records())[0]
-        assert enhanced.context == "This document teaches RAG architecture"
-        assert "RAG" in enhanced.tags
-        assert enhanced.custom_metadata["complexity"] == 4
+        # Verify by reading back the enhanced record
+        enhanced_record = dataset.get_by_uuid(frames[0].uuid)
+        assert enhanced_record is not None
+        
+        assert enhanced_record.metadata.get("context") == "This document teaches RAG architecture"
+        
+        tags = enhanced_record.metadata.get("tags", [])
+        assert "RAG" in tags
+        
+        # Custom metadata should be a dict with string values
+        custom_meta = enhanced_record.metadata.get("custom_metadata", {})
+        assert custom_meta["complexity"] == "4"
+        assert custom_meta["audience"] == "developers"
         
         # Cleanup
         import shutil
