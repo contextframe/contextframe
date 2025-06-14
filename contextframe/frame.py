@@ -702,10 +702,11 @@ class FrameDataset:
             for the full list of supported keys.
         """
         raw_uri = str(path)
+        from lance.dataset import LanceDataset
         if storage_options is None:
-            ds = lance.dataset(raw_uri, version=version)
+            ds = LanceDataset(raw_uri, version=version)
         else:
-            ds = lance.dataset(
+            ds = LanceDataset(
                 raw_uri, version=version, storage_options=storage_options
             )
         return cls(ds)
