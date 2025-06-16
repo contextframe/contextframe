@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Search documents in a ContextFrame dataset
+# Usage: contextframe-search <dataset> <query> [--limit 10] [--type vector|text|hybrid]
+
+set -euo pipefail
+
+# Default values
+LIMIT=10
+SEARCH_TYPE="hybrid"
+FILTER=""
+COLLECTION=""
+
+# Parse arguments
+if [ $# -lt 2 ]; then
+    echo "Usage: contextframe-search <dataset> <query> [options]"
+    echo ""
+    echo "Options:"
+    echo "  --limit N        Number of results to return (default: 10)"
+    echo "  --type TYPE      Search type: vector, text, or hybrid (default: hybrid)"
+    echo "  --filter SQL     Lance SQL filter expression"
+    echo "  --collection COL Filter by collection name"
+    echo ""
+    echo "Examples:"
+    echo "  contextframe-search data.lance 'machine learning'"
+    echo "  contextframe-search data.lance 'python' --type text --limit 20"
+    echo "  contextframe-search data.lance 'AI' --collection 'research-papers'"
+    exit 1
+fi
+
+DATASET="$1"
+QUERY="$2"
+shift 2
+
+# Parse optional arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --limit)
+            LIMIT="$2"
+            shift 2
+            ;;
+        --type)
+            SEARCH_TYPE="$2"
+            shift 2
+            ;;
+        --filter)
+            FILTER="$2"
+            shift 2
+            ;;
+        --collection)
+            COLLECTION="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Validate search type
+if [[ ! "$SEARCH_TYPE" =~ ^(vector|text|hybrid)$ ]]; then
+    echo "Error: Invalid search type. Must be 'vector', 'text', or 'hybrid'"
+    exit 1
+fi
+
+# Check if dataset exists
+if [ ! -d "$DATASET" ]; then
+    echo "Error: Dataset not found: $DATASET"
+    exit 1
+fi
+
+# Build filter if collection specified
+if [ -n "$COLLECTION" ]; then
+    if [ -n "$FILTER" ]; then
+        FILTER="$FILTER AND collection = '$COLLECTION'"
+    else
+        FILTER="collection = '$COLLECTION'"
+    fi
+fi
+
+# Execute search using Python
+python -m contextframe.scripts.search_impl \
+    "$DATASET" \
+    "$QUERY" \
+    --limit "$LIMIT" \
+    --type "$SEARCH_TYPE" \
+    ${FILTER:+--filter "$FILTER"}

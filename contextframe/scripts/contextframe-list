@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# List documents in a ContextFrame dataset
+# Usage: contextframe-list <dataset> [--limit 50] [--filter SQL] [--format table|json|ids]
+
+set -euo pipefail
+
+# Default values
+LIMIT=50
+FILTER=""
+FORMAT="table"
+COLLECTION=""
+RECORD_TYPE=""
+
+# Parse arguments
+if [ $# -lt 1 ]; then
+    echo "Usage: contextframe-list <dataset> [options]"
+    echo ""
+    echo "Options:"
+    echo "  --limit N           Number of records to return (default: 50)"
+    echo "  --filter SQL        Lance SQL filter expression"
+    echo "  --format FORMAT     Output format: table, json, or ids (default: table)"
+    echo "  --collection NAME   Filter by collection name"
+    echo "  --type TYPE        Filter by record type (document, collection_header, dataset_header)"
+    echo ""
+    echo "Examples:"
+    echo "  contextframe-list data.lance"
+    echo "  contextframe-list data.lance --limit 100 --format json"
+    echo "  contextframe-list data.lance --collection 'research-papers' --type document"
+    exit 1
+fi
+
+DATASET="$1"
+shift
+
+# Parse optional arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --limit)
+            LIMIT="$2"
+            shift 2
+            ;;
+        --filter)
+            FILTER="$2"
+            shift 2
+            ;;
+        --format)
+            FORMAT="$2"
+            shift 2
+            ;;
+        --collection)
+            COLLECTION="$2"
+            shift 2
+            ;;
+        --type)
+            RECORD_TYPE="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Validate format
+if [[ ! "$FORMAT" =~ ^(table|json|ids)$ ]]; then
+    echo "Error: Invalid format. Must be 'table', 'json', or 'ids'"
+    exit 1
+fi
+
+# Check if dataset exists
+if [ ! -d "$DATASET" ]; then
+    echo "Error: Dataset not found: $DATASET"
+    exit 1
+fi
+
+# Build filter expressions
+FILTERS=()
+if [ -n "$FILTER" ]; then
+    FILTERS+=("$FILTER")
+fi
+
+if [ -n "$COLLECTION" ]; then
+    # This is a simplified filter - in practice we'd need to check relationships
+    FILTERS+=("collection = '$COLLECTION'")
+fi
+
+if [ -n "$RECORD_TYPE" ]; then
+    FILTERS+=("record_type = '$RECORD_TYPE'")
+fi
+
+# Combine filters with AND
+COMBINED_FILTER=""
+if [ ${#FILTERS[@]} -gt 0 ]; then
+    COMBINED_FILTER=$(IFS=" AND "; echo "${FILTERS[*]}")
+fi
+
+# Execute list operation using Python
+python -m contextframe.scripts.list_impl \
+    "$DATASET" \
+    --limit "$LIMIT" \
+    --format "$FORMAT" \
+    ${COMBINED_FILTER:+--filter "$COMBINED_FILTER"}

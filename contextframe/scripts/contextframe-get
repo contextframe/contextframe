@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Get a specific document from a ContextFrame dataset
+# Usage: contextframe-get <dataset> <identifier> [--format json|text|markdown]
+
+set -euo pipefail
+
+# Default values
+FORMAT="text"
+
+# Parse arguments
+if [ $# -lt 2 ]; then
+    echo "Usage: contextframe-get <dataset> <identifier> [options]"
+    echo ""
+    echo "Options:"
+    echo "  --format FORMAT    Output format: json, text, or markdown (default: text)"
+    echo ""
+    echo "Examples:"
+    echo "  contextframe-get data.lance doc-123"
+    echo "  contextframe-get data.lance doc-123 --format json"
+    exit 1
+fi
+
+DATASET="$1"
+IDENTIFIER="$2"
+shift 2
+
+# Parse optional arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --format)
+            FORMAT="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Validate format
+if [[ ! "$FORMAT" =~ ^(json|text|markdown)$ ]]; then
+    echo "Error: Invalid format. Must be 'json', 'text', or 'markdown'"
+    exit 1
+fi
+
+# Check if dataset exists
+if [ ! -d "$DATASET" ]; then
+    echo "Error: Dataset not found: $DATASET"
+    exit 1
+fi
+
+# Execute get operation using Python
+python -m contextframe.scripts.get_impl \
+    "$DATASET" \
+    "$IDENTIFIER" \
+    --format "$FORMAT"

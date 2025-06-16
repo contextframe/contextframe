@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# Add documents to a ContextFrame dataset
+# Usage: contextframe-add <dataset> <file|directory> [options]
+
+set -euo pipefail
+
+# Default values
+COLLECTION=""
+RECORD_TYPE="document"
+IDENTIFIER=""
+EMBEDDINGS="false"
+CHUNK_SIZE=""
+CHUNK_OVERLAP=""
+
+# Parse arguments
+if [ $# -lt 2 ]; then
+    echo "Usage: contextframe-add <dataset> <file|directory> [options]"
+    echo ""
+    echo "Options:"
+    echo "  --collection NAME    Add to collection with this name"
+    echo "  --type TYPE         Record type: document, collection_header, dataset_header"
+    echo "  --identifier ID     Custom identifier (auto-generated if not provided)"
+    echo "  --embeddings        Generate embeddings for documents"
+    echo "  --chunk-size N      Split documents into chunks of N characters"
+    echo "  --chunk-overlap N   Overlap between chunks (requires --chunk-size)"
+    echo ""
+    echo "Examples:"
+    echo "  contextframe-add data.lance document.txt"
+    echo "  contextframe-add data.lance docs/ --collection 'user-manual' --embeddings"
+    echo "  contextframe-add data.lance paper.pdf --chunk-size 1000 --chunk-overlap 100"
+    exit 1
+fi
+
+DATASET="$1"
+INPUT_PATH="$2"
+shift 2
+
+# Parse optional arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --collection)
+            COLLECTION="$2"
+            shift 2
+            ;;
+        --type)
+            RECORD_TYPE="$2"
+            shift 2
+            ;;
+        --identifier)
+            IDENTIFIER="$2"
+            shift 2
+            ;;
+        --embeddings)
+            EMBEDDINGS="true"
+            shift
+            ;;
+        --chunk-size)
+            CHUNK_SIZE="$2"
+            shift 2
+            ;;
+        --chunk-overlap)
+            CHUNK_OVERLAP="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Validate record type
+if [[ ! "$RECORD_TYPE" =~ ^(document|collection_header|dataset_header)$ ]]; then
+    echo "Error: Invalid record type. Must be 'document', 'collection_header', or 'dataset_header'"
+    exit 1
+fi
+
+# Check if input exists
+if [ ! -e "$INPUT_PATH" ]; then
+    echo "Error: Input not found: $INPUT_PATH"
+    exit 1
+fi
+
+# Create dataset if it doesn't exist
+if [ ! -d "$DATASET" ]; then
+    echo "Creating new dataset: $DATASET"
+    python -m contextframe.scripts.create_dataset "$DATASET"
+fi
+
+# Execute add operation using Python
+python -m contextframe.scripts.add_impl \
+    "$DATASET" \
+    "$INPUT_PATH" \
+    --type "$RECORD_TYPE" \
+    ${COLLECTION:+--collection "$COLLECTION"} \
+    ${IDENTIFIER:+--identifier "$IDENTIFIER"} \
+    ${EMBEDDINGS:+--embeddings} \
+    ${CHUNK_SIZE:+--chunk-size "$CHUNK_SIZE"} \
+    ${CHUNK_OVERLAP:+--chunk-overlap "$CHUNK_OVERLAP"}
