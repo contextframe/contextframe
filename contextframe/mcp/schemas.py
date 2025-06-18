@@ -170,3 +170,120 @@ class ListResult(BaseModel):
     total_count: int
     offset: int
     limit: int
+
+
+# Batch operation schemas
+class BatchSearchQuery(BaseModel):
+    """Individual search query for batch search."""
+    
+    query: str
+    search_type: Literal["vector", "text", "hybrid"] = "hybrid"
+    limit: int = Field(default=10, ge=1, le=100)
+    filter: Optional[str] = None
+
+
+class BatchSearchParams(BaseModel):
+    """Execute multiple document searches in parallel."""
+    
+    queries: List[BatchSearchQuery]
+    max_parallel: int = Field(default=5, ge=1, le=20)
+
+
+class BatchDocument(BaseModel):
+    """Document for batch operations."""
+    
+    content: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SharedSettings(BaseModel):
+    """Shared settings for batch operations."""
+    
+    generate_embeddings: bool = True
+    collection: Optional[str] = None
+    chunk_size: Optional[int] = None
+    chunk_overlap: Optional[int] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class BatchAddParams(BaseModel):
+    """Add multiple documents efficiently."""
+    
+    documents: List[BatchDocument]
+    shared_settings: SharedSettings = Field(default_factory=SharedSettings)
+    atomic: bool = Field(default=True, description="Rollback all on any failure")
+
+
+class UpdateSpec(BaseModel):
+    """Specification for batch updates."""
+    
+    metadata_updates: Optional[Dict[str, Any]] = None
+    content_template: Optional[str] = None
+    regenerate_embeddings: bool = False
+
+
+class BatchUpdateParams(BaseModel):
+    """Update multiple documents matching criteria."""
+    
+    filter: Optional[str] = None
+    document_ids: Optional[List[str]] = None
+    updates: UpdateSpec
+    max_documents: int = Field(default=1000, ge=1, le=10000)
+
+
+class BatchDeleteParams(BaseModel):
+    """Delete multiple documents with confirmation."""
+    
+    filter: Optional[str] = None
+    document_ids: Optional[List[str]] = None
+    dry_run: bool = Field(default=True, description="Preview what would be deleted")
+    confirm_count: Optional[int] = Field(None, description="Expected number of deletions")
+
+
+class BatchEnhanceParams(BaseModel):
+    """Enhance multiple documents with LLM."""
+    
+    document_ids: Optional[List[str]] = None
+    filter: Optional[str] = None
+    enhancements: List[Literal["context", "tags", "title", "metadata"]]
+    purpose: Optional[str] = None
+    batch_size: int = Field(default=10, ge=1, le=50)
+
+
+class SourceSpec(BaseModel):
+    """Source specification for batch extract."""
+    
+    path: Optional[str] = None
+    url: Optional[str] = None
+    type: Literal["file", "url"]
+
+
+class BatchExtractParams(BaseModel):
+    """Extract from multiple files/URLs."""
+    
+    sources: List[SourceSpec]
+    add_to_dataset: bool = True
+    shared_metadata: Dict[str, Any] = Field(default_factory=dict)
+    collection: Optional[str] = None
+    continue_on_error: bool = True
+
+
+class BatchExportParams(BaseModel):
+    """Export documents in bulk."""
+    
+    filter: Optional[str] = None
+    document_ids: Optional[List[str]] = None
+    format: Literal["json", "jsonl", "csv", "parquet"]
+    include_embeddings: bool = False
+    output_path: str
+    chunk_size: int = Field(default=1000, ge=100, le=10000)
+
+
+class BatchImportParams(BaseModel):
+    """Import documents from files."""
+    
+    source_path: str
+    format: Literal["json", "jsonl", "csv", "parquet"]
+    mapping: Optional[Dict[str, str]] = None
+    validation: Dict[str, Any] = Field(default_factory=dict)
+    generate_embeddings: bool = True

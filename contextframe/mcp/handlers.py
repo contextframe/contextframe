@@ -43,11 +43,15 @@ class MessageHandler:
     async def handle(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming JSON-RPC message and return response."""
         try:
+            # Check for jsonrpc field first
+            if "jsonrpc" not in message:
+                raise InvalidRequest("Missing jsonrpc field")
+            
             # Parse request
             try:
                 request = JSONRPCRequest(**message)
             except Exception as e:
-                raise InvalidRequest(f"Invalid request format: {str(e)}")
+                raise InvalidParams(f"Invalid request parameters: {str(e)}")
 
             # Check method exists
             if request.method not in self._method_handlers:

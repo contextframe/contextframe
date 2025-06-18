@@ -37,10 +37,15 @@ logger = logging.getLogger(__name__)
 class ToolRegistry:
     """Registry for MCP tools."""
 
-    def __init__(self, dataset: FrameDataset):
+    def __init__(self, dataset: FrameDataset, transport: Optional[Any] = None):
         self.dataset = dataset
+        self.transport = transport
         self._tools: Dict[str, Tool] = {}
         self._handlers: Dict[str, Callable] = {}
+        
+        # Create document tools instance
+        self._doc_tools = self  # For now, self contains the document tools
+        
         self._register_default_tools()
         
         # Register enhancement and extraction tools if available
@@ -53,6 +58,15 @@ class ToolRegistry:
             register_extraction_tools(self, dataset)
         except ImportError:
             logger.warning("Enhancement tools not available")
+        
+        # Register batch tools if transport is available
+        if transport:
+            try:
+                from contextframe.mcp.batch.tools import BatchTools
+                batch_tools = BatchTools(dataset, transport, self._doc_tools)
+                batch_tools.register_tools(self)
+            except ImportError:
+                logger.warning("Batch tools not available")
 
     def _register_default_tools(self):
         """Register the default set of tools."""
@@ -271,6 +285,40 @@ class ToolRegistry:
         """Register a new tool."""
         self._tools[name] = tool
         self._handlers[name] = handler
+    
+    def register_tool(
+        self,
+        name: str,
+        handler: Callable,
+        schema: Optional[Any] = None,
+        description: Optional[str] = None
+    ):
+        """Register a tool with flexible parameters.
+        
+        Args:
+            name: Tool name
+            handler: Async callable handler
+            schema: Pydantic model or dict schema
+            description: Tool description
+        """
+        # Build input schema from pydantic model if provided
+        if schema and hasattr(schema, 'model_json_schema'):
+            input_schema = schema.model_json_schema()
+            # Remove title if present
+            input_schema.pop('title', None)
+        elif isinstance(schema, dict):
+            input_schema = schema
+        else:
+            input_schema = {"type": "object", "properties": {}}
+        
+        # Create tool
+        tool = Tool(
+            name=name,
+            description=description or f"{name} tool",
+            inputSchema=input_schema
+        )
+        
+        self.register(name, tool, handler)
 
     def list_tools(self) -> List[Tool]:
         """List all registered tools."""

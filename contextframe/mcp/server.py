@@ -7,11 +7,12 @@ from typing import Optional
 from dataclasses import dataclass
 
 from contextframe.frame import FrameDataset
-from contextframe.mcp.transport import StdioTransport
 from contextframe.mcp.handlers import MessageHandler
 from contextframe.mcp.tools import ToolRegistry
 from contextframe.mcp.resources import ResourceRegistry
 from contextframe.mcp.errors import DatasetNotFound
+from contextframe.mcp.core.transport import TransportAdapter
+from contextframe.mcp.transports.stdio import StdioAdapter
 
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ class ContextFrameMCPServer:
         
         # Components (initialized in setup)
         self.dataset: Optional[FrameDataset] = None
-        self.transport: Optional[StdioTransport] = None
+        self.transport: Optional[TransportAdapter] = None
         self.handler: Optional[MessageHandler] = None
         self.tools: Optional[ToolRegistry] = None
         self.resources: Optional[ResourceRegistry] = None
@@ -70,13 +71,13 @@ class ContextFrameMCPServer:
             raise DatasetNotFound(self.dataset_path) from e
         
         # Initialize components
-        self.transport = StdioTransport()
+        self.transport = StdioAdapter()
         self.handler = MessageHandler(self)
-        self.tools = ToolRegistry(self.dataset)
+        self.tools = ToolRegistry(self.dataset, self.transport)
         self.resources = ResourceRegistry(self.dataset)
         
-        # Connect transport
-        await self.transport.connect()
+        # Initialize transport
+        await self.transport.initialize()
         
         logger.info(f"MCP server initialized for dataset: {self.dataset_path}")
 
@@ -97,8 +98,9 @@ class ContextFrameMCPServer:
         
         try:
             # Process messages
-            async for message in self.transport:
-                if self._shutdown_requested:
+            while not self._shutdown_requested:
+                message = await self.transport.receive_message()
+                if message is None:
                     break
                 
                 try:
@@ -130,7 +132,7 @@ class ContextFrameMCPServer:
         logger.info("Cleaning up server resources")
         
         if self.transport:
-            await self.transport.close()
+            await self.transport.shutdown()
         
         # Dataset cleanup if needed
         if self.dataset:
