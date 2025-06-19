@@ -11,7 +11,7 @@
 ## Original Issue Summary
 
 **Issue ID**: CFOS-41  
-**Branch**: `jay/cfos-41-fix-lance-map-type-incompatibility-for-custom_metadata-field`  
+**Branch**: `jayscambler/cfos-41-fix-lance-map-type-incompatibility-for-custom_metadata-field`  
 **Status**: ~~In Progress~~ **RESOLVED**
 
 ### Problem Description

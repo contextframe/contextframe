@@ -202,22 +202,22 @@ Automate the process of converting git working state into comprehensive Linear i
    ## Issues Created (within project):
    - CVIREC-20: Remove duplicate response models from agents
      - Labels: Refactor, Technical Debt
-     - Branch: jay/cvirec-20-remove-duplicate-response-models
+     - Branch: jayscambler/cvirec-20-remove-duplicate-response-models
      - PR: #21
    
    - CVIREC-21: Consolidate tool imports across all agents
      - Labels: Refactor, Improvement
-     - Branch: jay/cvirec-21-consolidate-tool-imports
+     - Branch: jayscambler/cvirec-21-consolidate-tool-imports
      - PR: #22
    
    - CVIREC-22: Update database models and type hints
      - Labels: Improvement, Technical Debt
-     - Branch: jay/cvirec-22-update-database-models
+     - Branch: jayscambler/cvirec-22-update-database-models
      - PR: #23
    
    - CVIREC-23: Clean up unused evaluation files
      - Labels: Technical Debt
-     - Branch: jay/cvirec-23-clean-up-evaluation-files
+     - Branch: jayscambler/cvirec-23-clean-up-evaluation-files
      - PR: #24
    
    ## Pull Requests:
