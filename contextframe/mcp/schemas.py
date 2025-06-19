@@ -287,3 +287,100 @@ class BatchImportParams(BaseModel):
     mapping: Optional[Dict[str, str]] = None
     validation: Dict[str, Any] = Field(default_factory=dict)
     generate_embeddings: bool = True
+
+
+# Collection management schemas
+class CreateCollectionParams(BaseModel):
+    """Create a new collection with metadata and optional template."""
+    
+    name: str = Field(..., description="Collection name")
+    description: Optional[str] = Field(None, description="Collection description")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Collection metadata")
+    parent_collection: Optional[str] = Field(None, description="Parent collection ID for hierarchies")
+    template: Optional[str] = Field(None, description="Template name to apply")
+    initial_members: List[str] = Field(default_factory=list, description="Document IDs to add")
+
+
+class UpdateCollectionParams(BaseModel):
+    """Update collection properties and membership."""
+    
+    collection_id: str = Field(..., description="Collection ID to update")
+    name: Optional[str] = Field(None, description="New name")
+    description: Optional[str] = Field(None, description="New description")
+    metadata_updates: Optional[Dict[str, Any]] = Field(None, description="Metadata to update")
+    add_members: List[str] = Field(default_factory=list, description="Document IDs to add")
+    remove_members: List[str] = Field(default_factory=list, description="Document IDs to remove")
+
+
+class DeleteCollectionParams(BaseModel):
+    """Delete a collection and optionally its members."""
+    
+    collection_id: str = Field(..., description="Collection ID to delete")
+    delete_members: bool = Field(False, description="Also delete member documents")
+    recursive: bool = Field(False, description="Delete sub-collections recursively")
+
+
+class ListCollectionsParams(BaseModel):
+    """List collections with filtering and statistics."""
+    
+    parent_id: Optional[str] = Field(None, description="Filter by parent collection")
+    include_stats: bool = Field(True, description="Include member statistics")
+    include_empty: bool = Field(True, description="Include collections with no members")
+    sort_by: Literal["name", "created_at", "member_count"] = Field("name")
+    limit: int = Field(100, ge=1, le=1000, description="Maximum collections to return")
+    offset: int = Field(0, ge=0, description="Offset for pagination")
+
+
+class MoveDocumentsParams(BaseModel):
+    """Move documents between collections."""
+    
+    document_ids: List[str] = Field(..., description="Documents to move")
+    source_collection: Optional[str] = Field(None, description="Source collection (None for uncollected)")
+    target_collection: Optional[str] = Field(None, description="Target collection (None to remove)")
+    update_metadata: bool = Field(True, description="Apply target collection metadata")
+
+
+class GetCollectionStatsParams(BaseModel):
+    """Get detailed statistics for a collection."""
+    
+    collection_id: str = Field(..., description="Collection ID")
+    include_member_details: bool = Field(False, description="Include per-member statistics")
+    include_subcollections: bool = Field(True, description="Include sub-collection stats")
+
+
+# Collection response schemas
+class CollectionInfo(BaseModel):
+    """Information about a collection."""
+    
+    collection_id: str
+    header_id: str
+    name: str
+    description: Optional[str] = None
+    parent_id: Optional[str] = None
+    created_at: str
+    updated_at: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    member_count: int = 0
+    total_size_bytes: Optional[int] = None
+
+
+class CollectionStats(BaseModel):
+    """Detailed statistics for a collection."""
+    
+    total_members: int
+    direct_members: int
+    subcollection_members: int
+    total_size_bytes: int
+    avg_document_size: float
+    unique_tags: List[str]
+    date_range: Dict[str, str]
+    member_types: Dict[str, int]
+
+
+class CollectionResult(BaseModel):
+    """Result of a collection operation."""
+    
+    collection: CollectionInfo
+    statistics: Optional[CollectionStats] = None
+    subcollections: List[CollectionInfo] = Field(default_factory=list)
+    members: List[DocumentResult] = Field(default_factory=list)
