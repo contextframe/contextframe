@@ -67,6 +67,16 @@ class ToolRegistry:
                 batch_tools.register_tools(self)
             except ImportError:
                 logger.warning("Batch tools not available")
+            
+            # Register collection tools
+            try:
+                from contextframe.mcp.collections.tools import CollectionTools
+                from contextframe.mcp.collections.templates import TemplateRegistry
+                template_registry = TemplateRegistry()
+                collection_tools = CollectionTools(dataset, transport, template_registry)
+                collection_tools.register_tools(self)
+            except ImportError:
+                logger.warning("Collection tools not available")
 
     def _register_default_tools(self):
         """Register the default set of tools."""

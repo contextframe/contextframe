@@ -144,10 +144,7 @@ class BatchTools:
             # Create record
             record = FrameRecord(
                 text_content=content,
-                metadata=metadata,
-                collection=shared.get("collection"),
-                chunk_index=0,
-                total_chunks=1
+                metadata=metadata
             )
             
             # Generate embeddings if requested
