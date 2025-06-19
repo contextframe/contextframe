@@ -77,6 +77,50 @@ class ToolRegistry:
                 collection_tools.register_tools(self)
             except ImportError:
                 logger.warning("Collection tools not available")
+            
+            # Register subscription tools
+            try:
+                from contextframe.mcp.subscriptions.tools import (
+                    subscribe_changes,
+                    poll_changes,
+                    unsubscribe,
+                    get_subscriptions,
+                    SUBSCRIPTION_TOOLS
+                )
+                from contextframe.mcp.schemas import (
+                    SubscribeChangesParams,
+                    PollChangesParams,
+                    UnsubscribeParams,
+                    GetSubscriptionsParams
+                )
+                
+                # Register each subscription tool
+                self.register_tool(
+                    "subscribe_changes",
+                    subscribe_changes,
+                    SubscribeChangesParams,
+                    "Create a subscription to monitor dataset changes"
+                )
+                self.register_tool(
+                    "poll_changes",
+                    poll_changes,
+                    PollChangesParams,
+                    "Poll for changes since the last poll"
+                )
+                self.register_tool(
+                    "unsubscribe",
+                    unsubscribe,
+                    UnsubscribeParams,
+                    "Cancel an active subscription"
+                )
+                self.register_tool(
+                    "get_subscriptions",
+                    get_subscriptions,
+                    GetSubscriptionsParams,
+                    "Get list of active subscriptions"
+                )
+            except ImportError:
+                logger.warning("Subscription tools not available")
 
     def _register_default_tools(self):
         """Register the default set of tools."""

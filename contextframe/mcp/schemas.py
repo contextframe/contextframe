@@ -384,3 +384,108 @@ class CollectionResult(BaseModel):
     statistics: Optional[CollectionStats] = None
     subcollections: List[CollectionInfo] = Field(default_factory=list)
     members: List[DocumentResult] = Field(default_factory=list)
+
+
+# Subscription schemas
+class SubscribeChangesParams(BaseModel):
+    """Create a subscription to monitor dataset changes."""
+    
+    resource_type: Literal["documents", "collections", "all"] = Field(
+        "all", 
+        description="Type of resources to monitor"
+    )
+    filters: Optional[Dict[str, Any]] = Field(
+        None, 
+        description="Optional filters (e.g., {'collection_id': '...'})"
+    )
+    options: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "polling_interval": 5,
+            "include_data": False,
+            "batch_size": 100
+        },
+        description="Subscription options"
+    )
+
+
+class PollChangesParams(BaseModel):
+    """Poll for changes since the last poll."""
+    
+    subscription_id: str = Field(..., description="Active subscription ID")
+    poll_token: Optional[str] = Field(None, description="Token from last poll")
+    timeout: int = Field(
+        30, 
+        ge=0, 
+        le=300,
+        description="Max seconds to wait for changes (long polling)"
+    )
+
+
+class UnsubscribeParams(BaseModel):
+    """Cancel an active subscription."""
+    
+    subscription_id: str = Field(..., description="Subscription to cancel")
+
+
+class GetSubscriptionsParams(BaseModel):
+    """Get list of active subscriptions."""
+    
+    resource_type: Optional[Literal["documents", "collections", "all"]] = Field(
+        None,
+        description="Filter by resource type"
+    )
+
+
+# Subscription response schemas
+class ChangeEvent(BaseModel):
+    """Change event in the dataset."""
+    
+    type: Literal["created", "updated", "deleted"]
+    resource_type: Literal["document", "collection"]
+    resource_id: str
+    version: int
+    timestamp: str
+    old_data: Optional[Dict[str, Any]] = None
+    new_data: Optional[Dict[str, Any]] = None
+
+
+class SubscriptionInfo(BaseModel):
+    """Information about an active subscription."""
+    
+    subscription_id: str
+    resource_type: str
+    filters: Optional[Dict[str, Any]]
+    created_at: str
+    last_poll: Optional[str]
+    options: Dict[str, Any]
+    
+    
+class SubscribeResult(BaseModel):
+    """Result of creating a subscription."""
+    
+    subscription_id: str
+    poll_token: str
+    polling_interval: int
+    
+    
+class PollResult(BaseModel):
+    """Result of polling for changes."""
+    
+    changes: List[ChangeEvent]
+    poll_token: str
+    has_more: bool
+    subscription_active: bool
+
+
+class UnsubscribeResult(BaseModel):
+    """Result of cancelling a subscription."""
+    
+    cancelled: bool
+    final_poll_token: Optional[str]
+    
+    
+class GetSubscriptionsResult(BaseModel):
+    """Result of listing subscriptions."""
+    
+    subscriptions: List[SubscriptionInfo]
+    total_count: int
