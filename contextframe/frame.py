@@ -703,12 +703,11 @@ class FrameDataset:
         """
         raw_uri = str(path)
         from lance.dataset import LanceDataset
+
         if storage_options is None:
             ds = LanceDataset(raw_uri, version=version)
         else:
-            ds = LanceDataset(
-                raw_uri, version=version, storage_options=storage_options
-            )
+            ds = LanceDataset(raw_uri, version=version, storage_options=storage_options)
         return cls(ds)
 
     # ------------------------------------------------------------------
@@ -864,11 +863,11 @@ class FrameDataset:
         **enricher_kwargs,
     ) -> list[Any]:
         """Enrich documents in the dataset using LLM-powered analysis.
-        
+
         This convenience method provides easy access to the enrichment
         functionality, allowing AI agents and users to populate schema
         fields with meaningful metadata.
-        
+
         Parameters
         ----------
         enrichments:
@@ -893,12 +892,12 @@ class FrameDataset:
             LLM model to use for enrichment
         **enricher_kwargs:
             Additional arguments for ContextEnricher
-            
+
         Returns
         -------
         list[EnrichmentResult]
             Results of the enrichment operations
-            
+
         Examples
         --------
         >>> # Basic enrichment
@@ -906,7 +905,7 @@ class FrameDataset:
         ...     "context": "Explain what this document teaches",
         ...     "tags": "Extract technology and concept tags"
         ... })
-        
+
         >>> # Custom metadata extraction
         >>> dataset.enrich({
         ...     "custom_metadata": {
@@ -914,7 +913,7 @@ class FrameDataset:
         ...         "format": "json"
         ...     }
         ... }, filter="context IS NULL")
-        
+
         >>> # Using different model
         >>> dataset.enrich(
         ...     {"context": "Summarize for AI developers"},
@@ -922,7 +921,7 @@ class FrameDataset:
         ... )
         """
         from contextframe.enrich import ContextEnricher
-        
+
         enricher = ContextEnricher(model=model, **enricher_kwargs)
         return enricher.enrich_dataset(
             self,
@@ -930,7 +929,7 @@ class FrameDataset:
             filter=filter,
             skip_existing=skip_existing,
             batch_size=batch_size,
-            show_progress=show_progress
+            show_progress=show_progress,
         )
 
     # ------------------------------------------------------------------
@@ -1967,7 +1966,7 @@ class FrameDataset:
             )
         # Delegate to Lance
         self._native.create_scalar_index(column, replace=replace)
-    
+
     def enhance(
         self,
         enhancements: dict[str, str | dict[str, Any]],
@@ -1977,12 +1976,12 @@ class FrameDataset:
         show_progress: bool = True,
         provider: str = "openai",
         model: str = "gpt-4o-mini",
-        **kwargs
+        **kwargs,
     ) -> list[Any]:
         """Enhance documents in the dataset with LLM-generated metadata.
-        
+
         This is a convenience method that wraps ContextEnhancer functionality.
-        
+
         Args:
             enhancements: Map of field_name -> prompt or config dict
             filter: Optional Lance SQL filter
@@ -1992,10 +1991,10 @@ class FrameDataset:
             provider: LLM provider (openai, anthropic, etc.)
             model: Model name
             **kwargs: Additional provider-specific arguments
-            
+
         Returns:
             List of enhancement results
-            
+
         Example:
             >>> dataset.enhance({
             ...     "context": "Summarize what this document teaches",
@@ -2007,7 +2006,7 @@ class FrameDataset:
             ... })
         """
         from contextframe.enhance import ContextEnhancer
-        
+
         enhancer = ContextEnhancer(provider=provider, model=model, **kwargs)
         return enhancer.enhance_dataset(
             self,
@@ -2015,5 +2014,215 @@ class FrameDataset:
             filter=filter,
             batch_size=batch_size,
             skip_existing=skip_existing,
-            show_progress=show_progress
+            show_progress=show_progress,
         )
+
+    # ------------------------------------------------------------------
+    # Analytics and Performance Methods
+    # ------------------------------------------------------------------
+
+    def get_dataset_stats(self) -> dict[str, Any]:
+        """Get comprehensive dataset statistics using Lance's native stats.
+
+        Returns:
+            Dictionary containing:
+            - dataset_stats: Fragment counts, deleted rows, small files
+            - data_stats: Field-level statistics
+            - storage_size: Total size in bytes
+            - version_info: Current and latest versions
+            - index_info: List of indices
+        """
+        stats = {}
+
+        # Basic dataset stats
+        if hasattr(self._dataset, 'stats'):
+            dataset_stats = self._dataset.stats.dataset_stats()
+            stats['dataset_stats'] = {
+                'num_fragments': dataset_stats.num_fragments,
+                'num_deleted_rows': dataset_stats.num_deleted_rows,
+                'num_small_files': dataset_stats.num_small_files,
+            }
+
+            # Data statistics
+            data_stats = self._dataset.stats.data_stats()
+            if data_stats:
+                stats['data_stats'] = data_stats
+
+        # Version info
+        stats['version_info'] = {
+            'current_version': self._dataset.version,
+            'latest_version': self._dataset.latest_version,
+            'data_storage_version': self._dataset.data_storage_version,
+        }
+
+        # Storage info
+        stats['storage'] = {
+            'uri': self._dataset.uri,
+            'num_rows': len(self),
+        }
+
+        # Index info
+        if hasattr(self._dataset, 'list_indices'):
+            indices = self._dataset.list_indices()
+            stats['indices'] = [
+                {
+                    'name': idx.name,
+                    'type': idx.type,
+                    'fields': idx.fields,
+                    'version': idx.version,
+                }
+                for idx in indices
+            ]
+
+        return stats
+
+    def get_fragment_stats(self) -> list[dict[str, Any]]:
+        """Get statistics for all fragments in the dataset.
+
+        Returns:
+            List of fragment statistics including:
+            - fragment_id: Fragment identifier
+            - num_rows: Number of rows after deletions
+            - num_deletions: Number of deleted rows
+            - physical_rows: Original row count
+            - files: List of data files
+        """
+        fragments = []
+
+        for fragment in self._dataset.get_fragments():
+            metadata = fragment.metadata
+            fragments.append(
+                {
+                    'fragment_id': fragment.fragment_id
+                    if hasattr(fragment, 'fragment_id')
+                    else len(fragments),
+                    'num_rows': metadata.num_rows,
+                    'num_deletions': metadata.num_deletions
+                    if hasattr(metadata, 'num_deletions')
+                    else 0,
+                    'physical_rows': metadata.physical_rows
+                    if hasattr(metadata, 'physical_rows')
+                    else metadata.num_rows,
+                    'files': [f.path() for f in metadata.files]
+                    if hasattr(metadata, 'files')
+                    else [],
+                }
+            )
+
+        return fragments
+
+    def compact_files(
+        self, target_rows_per_fragment: int = 1024 * 1024, **kwargs
+    ) -> dict[str, Any]:
+        """Compact dataset files to optimize storage.
+
+        Args:
+            target_rows_per_fragment: Target number of rows per fragment
+            **kwargs: Additional arguments passed to Lance optimizer
+
+        Returns:
+            Dictionary with compaction metrics
+        """
+        if not hasattr(self._dataset, 'optimize'):
+            raise NotImplementedError(
+                "Dataset optimization requires newer Lance version"
+            )
+
+        # Perform compaction
+        metrics = self._dataset.optimize.compact_files(
+            target_rows_per_fragment=target_rows_per_fragment, **kwargs
+        )
+
+        return {
+            'fragments_compacted': getattr(metrics, 'fragments_compacted', 0),
+            'files_removed': getattr(metrics, 'files_removed', 0),
+            'files_added': getattr(metrics, 'files_added', 0),
+        }
+
+    def optimize_indices(self, **kwargs) -> dict[str, Any]:
+        """Optimize dataset indices for better query performance.
+
+        Returns:
+            Dictionary with optimization results
+        """
+        if not hasattr(self._dataset, 'optimize'):
+            raise NotImplementedError("Index optimization requires newer Lance version")
+
+        # Optimize indices
+        self._dataset.optimize.optimize_indices(**kwargs)
+
+        return {
+            'status': 'completed',
+            'indices_optimized': len(self._dataset.list_indices())
+            if hasattr(self._dataset, 'list_indices')
+            else 0,
+        }
+
+    def cleanup_old_versions(
+        self, older_than: _dt.timedelta | None = None
+    ) -> dict[str, Any]:
+        """Clean up old dataset versions to reclaim space.
+
+        Args:
+            older_than: Only clean versions older than this duration
+
+        Returns:
+            Dictionary with cleanup statistics
+        """
+        cleanup_stats = self._dataset.cleanup_old_versions(older_than=older_than)
+
+        return {
+            'bytes_removed': getattr(cleanup_stats, 'bytes_removed', 0),
+            'old_versions_removed': getattr(cleanup_stats, 'old_versions', 0),
+        }
+
+    def list_indices(self) -> list[dict[str, Any]]:
+        """List all indices in the dataset.
+
+        Returns:
+            List of index information dictionaries
+        """
+        if not hasattr(self._dataset, 'list_indices'):
+            return []
+
+        indices = []
+        for idx in self._dataset.list_indices():
+            indices.append(
+                {
+                    'name': idx.name,
+                    'type': idx.type,
+                    'uuid': str(idx.uuid) if hasattr(idx, 'uuid') else None,
+                    'fields': idx.fields,
+                    'version': idx.version,
+                    'fragment_ids': list(idx.fragment_ids)
+                    if hasattr(idx, 'fragment_ids')
+                    else [],
+                }
+            )
+
+        return indices
+
+    def get_version_history(self) -> list[dict[str, Any]]:
+        """Get version history with metadata.
+
+        Returns:
+            List of version information dictionaries
+        """
+        versions = []
+
+        for version in range(self._dataset.latest_version + 1):
+            try:
+                # Checkout version to get metadata
+                versioned_ds = self._dataset.checkout_version(version)
+                versions.append(
+                    {
+                        'version': version,
+                        'num_rows': len(versioned_ds),
+                        'schema_fields': len(versioned_ds.schema),
+                    }
+                )
+            except Exception:
+                # Version might be cleaned up
+                continue
+
+        return versions
