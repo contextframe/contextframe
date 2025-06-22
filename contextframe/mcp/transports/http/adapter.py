@@ -28,7 +28,8 @@ class HttpAdapter(TransportAdapter):
 
     def __init__(self):
         super().__init__()
-        self._streaming = SSEStreamingAdapter()
+        # SSE streaming is optional - only initialized when needed
+        self._streaming = None  # Will be set by server if SSE is used
         self._active_streams: dict[str, SSEStream] = {}
         self._operation_progress: dict[str, asyncio.Queue] = {}
         self._subscription_queues: dict[str, asyncio.Queue] = {}
