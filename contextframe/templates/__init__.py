@@ -12,10 +12,10 @@ documents into ContextFrame datasets. They handle:
 Example:
     >>> from contextframe import FrameDataset
     >>> from contextframe.templates import SoftwareProjectTemplate
-    >>> 
+    >>>
     >>> template = SoftwareProjectTemplate()
     >>> dataset = FrameDataset.create("my-project.lance")
-    >>> 
+    >>>
     >>> # Apply template to import project
     >>> results = template.apply(
     ...     source_path="~/my-project",
@@ -32,7 +32,7 @@ from .software import SoftwareProjectTemplate
 
 __all__ = [
     "ContextTemplate",
-    "TemplateResult", 
+    "TemplateResult",
     "TemplateRegistry",
     "get_template",
     "list_templates",

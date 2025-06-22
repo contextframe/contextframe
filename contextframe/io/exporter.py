@@ -157,7 +157,9 @@ class FrameSetExporter:
             # Add relationship visualization
             relationships = frameset.metadata.get("relationships", [])
             if relationships:
-                content.extend(self._build_relationship_diagram(frameset, relationships))
+                content.extend(
+                    self._build_relationship_diagram(frameset, relationships)
+                )
                 content.append("")
             frames = self.dataset.get_frameset_frames(frameset.uuid)
             frame_count = len(frames)
@@ -262,14 +264,14 @@ class FrameSetExporter:
     ) -> list[str]:
         """Build a Mermaid diagram showing relationships."""
         lines = []
-        
+
         lines.append("## Relationship Visualization")
         lines.append("")
         lines.append("```mermaid")
         lines.append("graph TD")
         lines.append(f'    FS["{frameset.title}<br/>FrameSet"]')
         lines.append("")
-        
+
         # Group relationships by type
         rel_by_type = {}
         for rel in relationships:
@@ -277,7 +279,7 @@ class FrameSetExporter:
             if rel_type not in rel_by_type:
                 rel_by_type[rel_type] = []
             rel_by_type[rel_type].append(rel)
-        
+
         # Add nodes and connections
         node_count = 0
         for rel_type, rels in rel_by_type.items():
@@ -287,9 +289,9 @@ class FrameSetExporter:
                 title = rel.get("title", "Unknown")
                 # Escape quotes in title for Mermaid
                 title = title.replace('"', "'")
-                
+
                 lines.append(f'    {node_id}["{title}"]')
-                
+
                 # Define edge style based on relationship type
                 if rel_type == "contains":
                     edge_style = "-->|contains|"
@@ -301,18 +303,18 @@ class FrameSetExporter:
                     edge_style = "---|related|"
                 else:
                     edge_style = f"---|{rel_type}|"
-                
+
                 lines.append(f"    FS {edge_style} {node_id}")
-        
+
         lines.append("```")
         lines.append("")
-        
+
         # Add legend
         lines.append("**Relationship Types:**")
         lines.append("- `contains`: Direct inclusion in the frameset")
         lines.append("- `references`: External reference or citation")
         lines.append("- `member_of`: Part of a collection or group")
-        
+
         return lines
 
     def _add_usage_instructions(self) -> list[str]:

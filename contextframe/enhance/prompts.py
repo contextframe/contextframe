@@ -14,7 +14,6 @@ Write a brief context (2-3 sentences) explaining:
 2. When someone would need this information
 3. Key technologies or concepts involved
 """,
-    
     "research_context": """
 Document: {content}
 
@@ -23,7 +22,6 @@ Provide context (2-3 sentences) covering:
 2. Key findings or contributions
 3. Relevance to the field
 """,
-    
     "business_context": """
 Document: {content}
 
@@ -32,7 +30,6 @@ Create a business context (2-3 sentences) explaining:
 2. Key stakeholders or impacts
 3. Strategic importance
 """,
-    
     "tutorial_context": """
 Document: {content}
 
@@ -56,7 +53,6 @@ Extract 3-7 tags covering:
 
 Return as comma-separated list:
 """,
-    
     "topic_tags": """
 Document: {content}
 
@@ -68,7 +64,6 @@ Generate 5-10 topical tags that capture:
 
 Return as comma-separated list:
 """,
-    
     "skill_tags": """
 Document: {content}
 
@@ -96,7 +91,6 @@ Document: {content}
 
 Return as JSON:
 """,
-    
     "research_metadata": """
 Extract from this research document:
 - Research type (empirical, theoretical, review)
@@ -109,7 +103,6 @@ Document: {content}
 
 Return as JSON:
 """,
-    
     "meeting_metadata": """
 From this meeting document, extract:
 - Meeting date
@@ -122,7 +115,6 @@ Document: {content}
 
 Return as JSON:
 """,
-    
     "api_metadata": """
 For this API documentation, extract:
 - API version
@@ -156,7 +148,6 @@ Identify relationships:
 
 Return as JSON array with relationship type and explanation.
 """,
-    
     "document_citations": """
 Source document:
 Title: {source_title}
@@ -174,7 +165,6 @@ Find citation relationships:
 
 Return as JSON array with relationship type and brief explanation.
 """,
-    
     "topic_relationships": """
 Document:
 Title: {source_title}
@@ -210,7 +200,6 @@ Provide:
    - key_concepts (list)
    - use_cases (list)
 """,
-    
     "learning_path": """
 Enrich this document for a learning management system.
 
@@ -226,7 +215,6 @@ Extract:
    - learning_outcomes (list)
    - practice_exercises (yes/no)
 """,
-    
     "knowledge_graph": """
 Prepare document for knowledge graph construction.
 
@@ -241,7 +229,6 @@ Identify:
    - properties (key attributes)
    - domain (field or area)
 """,
-    
     "compliance_review": """
 Analyze document for compliance and governance.
 
@@ -276,7 +263,6 @@ Provide:
 2. RELATIONSHIPS: Which other documents it relates to and how
 3. POSITION: Its logical position or role in the collection
 """,
-    
     "cross_reference": """
 Analyzing document set for cross-references.
 
@@ -298,14 +284,14 @@ Return as JSON with relationship details.
 
 def get_prompt_template(category: str, template_name: str) -> str:
     """Get a specific prompt template.
-    
+
     Args:
         category: Category of prompt (context, tags, metadata, etc.)
         template_name: Name of the template
-        
+
     Returns:
         Prompt template string
-        
+
     Raises:
         KeyError: If category or template not found
     """
@@ -317,14 +303,14 @@ def get_prompt_template(category: str, template_name: str) -> str:
         "purpose": PURPOSE_PROMPTS,
         "batch": BATCH_PROMPTS,
     }
-    
+
     if category not in categories:
         raise KeyError(f"Unknown category: {category}")
-    
+
     prompts = categories[category]
     if template_name not in prompts:
         raise KeyError(f"Unknown template '{template_name}' in category '{category}'")
-    
+
     return prompts[template_name]
 
 
@@ -342,34 +328,31 @@ def list_available_prompts() -> dict[str, list[str]]:
 
 # Convenience function for custom prompts
 def build_enhancement_prompt(
-    task: str,
-    fields: list[str],
-    context: str = "",
-    examples: str = ""
+    task: str, fields: list[str], context: str = "", examples: str = ""
 ) -> str:
     """Build a custom enrichment prompt.
-    
+
     Args:
         task: Description of the enrichment task
         fields: List of fields to extract
         context: Additional context about the use case
         examples: Example outputs (optional)
-        
+
     Returns:
         Formatted prompt string
     """
     prompt = f"{task}\n\n"
-    
+
     if context:
         prompt += f"Context: {context}\n\n"
-    
+
     prompt += "Extract/generate the following:\n"
     for field in fields:
         prompt += f"- {field}\n"
-    
+
     if examples:
         prompt += f"\nExamples:\n{examples}\n"
-    
+
     prompt += "\nDocument: {content}\n\nOutput:"
-    
+
     return prompt

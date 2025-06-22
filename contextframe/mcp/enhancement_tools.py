@@ -1,44 +1,42 @@
 """Enhancement and extraction tools for MCP server."""
 
-import os
 import logging
-from typing import Any, Dict, List, Optional
-from pathlib import Path
-
+import os
 from contextframe.enhance import ContextEnhancer, EnhancementTools
 from contextframe.extract import (
     BatchExtractor,
-    MarkdownExtractor,
-    JSONExtractor,
-    YAMLExtractor,
     CSVExtractor,
-    TextFileExtractor
+    JSONExtractor,
+    MarkdownExtractor,
+    TextFileExtractor,
+    YAMLExtractor,
 )
-from contextframe.mcp.errors import InvalidParams, InternalError
+from contextframe.mcp.errors import InternalError, InvalidParams
 from contextframe.mcp.schemas import Tool
-
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 def register_enhancement_tools(tool_registry, dataset):
     """Register enhancement tools with the MCP tool registry."""
-    
+
     # Initialize enhancer
     model = os.environ.get("CONTEXTFRAME_ENHANCE_MODEL", "gpt-4")
     api_key = os.environ.get("OPENAI_API_KEY")
-    
+
     if not api_key:
         logger.warning("No OpenAI API key found. Enhancement tools will be disabled.")
         return
-    
+
     try:
         enhancer = ContextEnhancer(model=model, api_key=api_key)
         enhancement_tools = EnhancementTools(enhancer)
     except Exception as e:
         logger.warning(f"Failed to initialize enhancer: {e}")
         return
-    
+
     # Register enhance_context tool
     tool_registry.register(
         "enhance_context",
@@ -50,23 +48,23 @@ def register_enhancement_tools(tool_registry, dataset):
                 "properties": {
                     "document_id": {
                         "type": "string",
-                        "description": "Document UUID to enhance"
+                        "description": "Document UUID to enhance",
                     },
                     "purpose": {
                         "type": "string",
-                        "description": "What the context should focus on"
+                        "description": "What the context should focus on",
                     },
                     "current_context": {
                         "type": "string",
-                        "description": "Existing context if any"
-                    }
+                        "description": "Existing context if any",
+                    },
                 },
-                "required": ["document_id", "purpose"]
-            }
+                "required": ["document_id", "purpose"],
+            },
         ),
-        lambda args: _enhance_context(dataset, enhancement_tools, args)
+        lambda args: _enhance_context(dataset, enhancement_tools, args),
     )
-    
+
     # Register extract_metadata tool
     tool_registry.register(
         "extract_metadata",
@@ -76,27 +74,24 @@ def register_enhancement_tools(tool_registry, dataset):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "document_id": {
-                        "type": "string",
-                        "description": "Document UUID"
-                    },
+                    "document_id": {"type": "string", "description": "Document UUID"},
                     "schema": {
                         "type": "string",
-                        "description": "What metadata to extract (as prompt)"
+                        "description": "What metadata to extract (as prompt)",
                     },
                     "format": {
                         "type": "string",
                         "enum": ["json", "text"],
                         "default": "json",
-                        "description": "Output format"
-                    }
+                        "description": "Output format",
+                    },
                 },
-                "required": ["document_id", "schema"]
-            }
+                "required": ["document_id", "schema"],
+            },
         ),
-        lambda args: _extract_metadata(dataset, enhancement_tools, args)
+        lambda args: _extract_metadata(dataset, enhancement_tools, args),
     )
-    
+
     # Register generate_tags tool
     tool_registry.register(
         "generate_tags",
@@ -106,29 +101,26 @@ def register_enhancement_tools(tool_registry, dataset):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "document_id": {
-                        "type": "string",
-                        "description": "Document UUID"
-                    },
+                    "document_id": {"type": "string", "description": "Document UUID"},
                     "tag_types": {
                         "type": "string",
                         "default": "topics, technologies, concepts",
-                        "description": "Types of tags to generate"
+                        "description": "Types of tags to generate",
                     },
                     "max_tags": {
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 20,
                         "default": 5,
-                        "description": "Maximum number of tags"
-                    }
+                        "description": "Maximum number of tags",
+                    },
                 },
-                "required": ["document_id"]
-            }
+                "required": ["document_id"],
+            },
         ),
-        lambda args: _generate_tags(dataset, enhancement_tools, args)
+        lambda args: _generate_tags(dataset, enhancement_tools, args),
     )
-    
+
     # Register improve_title tool
     tool_registry.register(
         "improve_title",
@@ -138,23 +130,20 @@ def register_enhancement_tools(tool_registry, dataset):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "document_id": {
-                        "type": "string",
-                        "description": "Document UUID"
-                    },
+                    "document_id": {"type": "string", "description": "Document UUID"},
                     "style": {
                         "type": "string",
                         "enum": ["descriptive", "technical", "concise"],
                         "default": "descriptive",
-                        "description": "Title style"
-                    }
+                        "description": "Title style",
+                    },
                 },
-                "required": ["document_id"]
-            }
+                "required": ["document_id"],
+            },
         ),
-        lambda args: _improve_title(dataset, enhancement_tools, args)
+        lambda args: _improve_title(dataset, enhancement_tools, args),
     )
-    
+
     # Register enhance_for_purpose tool
     tool_registry.register(
         "enhance_for_purpose",
@@ -164,34 +153,31 @@ def register_enhancement_tools(tool_registry, dataset):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "document_id": {
-                        "type": "string",
-                        "description": "Document UUID"
-                    },
+                    "document_id": {"type": "string", "description": "Document UUID"},
                     "purpose": {
                         "type": "string",
-                        "description": "Purpose or use case for enhancement"
+                        "description": "Purpose or use case for enhancement",
                     },
                     "fields": {
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["context", "tags", "custom_metadata"]
+                            "enum": ["context", "tags", "custom_metadata"],
                         },
                         "default": ["context", "tags", "custom_metadata"],
-                        "description": "Which fields to enhance"
-                    }
+                        "description": "Which fields to enhance",
+                    },
                 },
-                "required": ["document_id", "purpose"]
-            }
+                "required": ["document_id", "purpose"],
+            },
         ),
-        lambda args: _enhance_for_purpose(dataset, enhancement_tools, args)
+        lambda args: _enhance_for_purpose(dataset, enhancement_tools, args),
     )
 
 
 def register_extraction_tools(tool_registry, dataset):
     """Register extraction tools with the MCP tool registry."""
-    
+
     # Register extract_from_file tool
     tool_registry.register(
         "extract_from_file",
@@ -203,29 +189,29 @@ def register_extraction_tools(tool_registry, dataset):
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "Path to file to extract"
+                        "description": "Path to file to extract",
                     },
                     "add_to_dataset": {
                         "type": "boolean",
                         "default": True,
-                        "description": "Whether to add extracted content to dataset"
+                        "description": "Whether to add extracted content to dataset",
                     },
                     "generate_embedding": {
                         "type": "boolean",
                         "default": True,
-                        "description": "Whether to generate embeddings"
+                        "description": "Whether to generate embeddings",
                     },
                     "collection": {
                         "type": "string",
-                        "description": "Collection to add document to"
-                    }
+                        "description": "Collection to add document to",
+                    },
                 },
-                "required": ["file_path"]
-            }
+                "required": ["file_path"],
+            },
         ),
-        lambda args: _extract_from_file(dataset, args)
+        lambda args: _extract_from_file(dataset, args),
     )
-    
+
     # Register batch_extract tool
     tool_registry.register(
         "batch_extract",
@@ -237,192 +223,180 @@ def register_extraction_tools(tool_registry, dataset):
                 "properties": {
                     "directory": {
                         "type": "string",
-                        "description": "Directory path to process"
+                        "description": "Directory path to process",
                     },
                     "patterns": {
                         "type": "array",
                         "items": {"type": "string"},
                         "default": ["*.md", "*.txt", "*.json", "*.yaml", "*.yml"],
-                        "description": "File patterns to match"
+                        "description": "File patterns to match",
                     },
                     "recursive": {
                         "type": "boolean",
                         "default": True,
-                        "description": "Process subdirectories"
+                        "description": "Process subdirectories",
                     },
                     "add_to_dataset": {
                         "type": "boolean",
                         "default": True,
-                        "description": "Add to dataset"
+                        "description": "Add to dataset",
                     },
-                    "collection": {
-                        "type": "string",
-                        "description": "Collection name"
-                    }
+                    "collection": {"type": "string", "description": "Collection name"},
                 },
-                "required": ["directory"]
-            }
+                "required": ["directory"],
+            },
         ),
-        lambda args: _batch_extract(dataset, args)
+        lambda args: _batch_extract(dataset, args),
     )
 
 
 # Implementation functions
-async def _enhance_context(dataset, enhancement_tools, args: Dict[str, Any]) -> Dict[str, Any]:
+async def _enhance_context(
+    dataset, enhancement_tools, args: dict[str, Any]
+) -> dict[str, Any]:
     """Implement enhance_context tool."""
     # Get document
     doc_id = args["document_id"]
     results = dataset.query(f"uuid = '{doc_id}'", limit=1)
     if not results:
         raise InvalidParams(f"Document not found: {doc_id}")
-    
+
     record = results[0]
-    
+
     # Enhance context
     new_context = enhancement_tools.enhance_context(
         content=record.content,
         purpose=args["purpose"],
-        current_context=args.get("current_context", record.metadata.get("context"))
+        current_context=args.get("current_context", record.metadata.get("context")),
     )
-    
+
     # Update document
     record.metadata["context"] = new_context
     dataset.delete(f"uuid = '{doc_id}'")
     dataset.add([record])
-    
-    return {
-        "document_id": doc_id,
-        "context": new_context
-    }
+
+    return {"document_id": doc_id, "context": new_context}
 
 
-async def _extract_metadata(dataset, enhancement_tools, args: Dict[str, Any]) -> Dict[str, Any]:
+async def _extract_metadata(
+    dataset, enhancement_tools, args: dict[str, Any]
+) -> dict[str, Any]:
     """Implement extract_metadata tool."""
     doc_id = args["document_id"]
     results = dataset.query(f"uuid = '{doc_id}'", limit=1)
     if not results:
         raise InvalidParams(f"Document not found: {doc_id}")
-    
+
     record = results[0]
-    
+
     # Extract metadata
     metadata = enhancement_tools.extract_metadata(
-        content=record.content,
-        schema=args["schema"],
-        format=args.get("format", "json")
+        content=record.content, schema=args["schema"], format=args.get("format", "json")
     )
-    
+
     # Update document
     if isinstance(metadata, dict):
         record.metadata.get("custom_metadata", {}).update(metadata)
     else:
         record.metadata["custom_metadata"] = metadata
-    
+
     dataset.delete(f"uuid = '{doc_id}'")
     dataset.add([record])
-    
-    return {
-        "document_id": doc_id,
-        "metadata": metadata
-    }
+
+    return {"document_id": doc_id, "metadata": metadata}
 
 
-async def _generate_tags(dataset, enhancement_tools, args: Dict[str, Any]) -> Dict[str, Any]:
+async def _generate_tags(
+    dataset, enhancement_tools, args: dict[str, Any]
+) -> dict[str, Any]:
     """Implement generate_tags tool."""
     doc_id = args["document_id"]
     results = dataset.query(f"uuid = '{doc_id}'", limit=1)
     if not results:
         raise InvalidParams(f"Document not found: {doc_id}")
-    
+
     record = results[0]
-    
+
     # Generate tags
     tags = enhancement_tools.generate_tags(
         content=record.content,
         tag_types=args.get("tag_types", "topics, technologies, concepts"),
-        max_tags=args.get("max_tags", 5)
+        max_tags=args.get("max_tags", 5),
     )
-    
+
     # Update document
     record.metadata["tags"] = tags
     dataset.delete(f"uuid = '{doc_id}'")
     dataset.add([record])
-    
-    return {
-        "document_id": doc_id,
-        "tags": tags
-    }
+
+    return {"document_id": doc_id, "tags": tags}
 
 
-async def _improve_title(dataset, enhancement_tools, args: Dict[str, Any]) -> Dict[str, Any]:
+async def _improve_title(
+    dataset, enhancement_tools, args: dict[str, Any]
+) -> dict[str, Any]:
     """Implement improve_title tool."""
     doc_id = args["document_id"]
     results = dataset.query(f"uuid = '{doc_id}'", limit=1)
     if not results:
         raise InvalidParams(f"Document not found: {doc_id}")
-    
+
     record = results[0]
-    
+
     # Improve title
     new_title = enhancement_tools.improve_title(
         content=record.content,
         current_title=record.metadata.get("title"),
-        style=args.get("style", "descriptive")
+        style=args.get("style", "descriptive"),
     )
-    
+
     # Update document
     record.metadata["title"] = new_title
     dataset.delete(f"uuid = '{doc_id}'")
     dataset.add([record])
-    
-    return {
-        "document_id": doc_id,
-        "title": new_title
-    }
+
+    return {"document_id": doc_id, "title": new_title}
 
 
-async def _enhance_for_purpose(dataset, enhancement_tools, args: Dict[str, Any]) -> Dict[str, Any]:
+async def _enhance_for_purpose(
+    dataset, enhancement_tools, args: dict[str, Any]
+) -> dict[str, Any]:
     """Implement enhance_for_purpose tool."""
     doc_id = args["document_id"]
     results = dataset.query(f"uuid = '{doc_id}'", limit=1)
     if not results:
         raise InvalidParams(f"Document not found: {doc_id}")
-    
+
     record = results[0]
-    
+
     # Enhance for purpose
     enhancements = enhancement_tools.enhance_for_purpose(
-        content=record.content,
-        purpose=args["purpose"],
-        fields=args.get("fields")
+        content=record.content, purpose=args["purpose"], fields=args.get("fields")
     )
-    
+
     # Update document with enhancements
     for field, value in enhancements.items():
         if field == "custom_metadata" and isinstance(value, dict):
             record.metadata.get("custom_metadata", {}).update(value)
         else:
             record.metadata[field] = value
-    
+
     dataset.delete(f"uuid = '{doc_id}'")
     dataset.add([record])
-    
-    return {
-        "document_id": doc_id,
-        "enhancements": enhancements
-    }
+
+    return {"document_id": doc_id, "enhancements": enhancements}
 
 
-async def _extract_from_file(dataset, args: Dict[str, Any]) -> Dict[str, Any]:
+async def _extract_from_file(dataset, args: dict[str, Any]) -> dict[str, Any]:
     """Implement extract_from_file tool."""
     file_path = Path(args["file_path"])
-    
+
     if not file_path.exists():
         raise InvalidParams(f"File not found: {file_path}")
-    
+
     # Determine extractor based on file extension
     ext = file_path.suffix.lower()
-    
+
     if ext == ".md":
         extractor = MarkdownExtractor()
     elif ext == ".json":
@@ -433,109 +407,107 @@ async def _extract_from_file(dataset, args: Dict[str, Any]) -> Dict[str, Any]:
         extractor = CSVExtractor()
     else:
         extractor = TextFileExtractor()
-    
+
     try:
         # Extract content
         result = extractor.extract(str(file_path))
-        
+
         if args.get("add_to_dataset", True):
             # Create record from extraction
             from contextframe.frame import FrameRecord
-            
-            record = FrameRecord(
-                content=result.content,
-                metadata=result.metadata
-            )
-            
+
+            record = FrameRecord(content=result.content, metadata=result.metadata)
+
             # Add collection if specified
             if args.get("collection"):
                 record.metadata["collection"] = args["collection"]
-            
+
             # Generate embedding if requested
             if args.get("generate_embedding", True):
-                model = os.environ.get("CONTEXTFRAME_EMBED_MODEL", "text-embedding-ada-002")
+                model = os.environ.get(
+                    "CONTEXTFRAME_EMBED_MODEL", "text-embedding-ada-002"
+                )
                 api_key = os.environ.get("OPENAI_API_KEY")
-                
+
                 if api_key:
                     from contextframe.embed import LiteLLMProvider
+
                     provider = LiteLLMProvider(model, api_key=api_key)
                     embed_result = provider.embed(record.content)
                     record.embeddings = embed_result.embeddings[0]
-            
+
             # Add to dataset
             dataset.add([record])
-            
+
             return {
                 "file_path": str(file_path),
                 "document_id": record.uuid,
                 "content_length": len(result.content),
-                "metadata": result.metadata
+                "metadata": result.metadata,
             }
         else:
             return {
                 "file_path": str(file_path),
                 "content": result.content,
-                "metadata": result.metadata
+                "metadata": result.metadata,
             }
-            
+
     except Exception as e:
         raise InternalError(f"Extraction failed: {str(e)}")
 
 
-async def _batch_extract(dataset, args: Dict[str, Any]) -> Dict[str, Any]:
+async def _batch_extract(dataset, args: dict[str, Any]) -> dict[str, Any]:
     """Implement batch_extract tool."""
     directory = Path(args["directory"])
-    
+
     if not directory.exists() or not directory.is_dir():
         raise InvalidParams(f"Directory not found: {directory}")
-    
+
     batch_extractor = BatchExtractor()
     patterns = args.get("patterns", ["*.md", "*.txt", "*.json", "*.yaml", "*.yml"])
-    
+
     try:
         # Extract from directory
         results = batch_extractor.extract_directory(
-            str(directory),
-            patterns=patterns,
-            recursive=args.get("recursive", True)
+            str(directory), patterns=patterns, recursive=args.get("recursive", True)
         )
-        
+
         added_documents = []
-        
+
         if args.get("add_to_dataset", True):
             from contextframe.frame import FrameRecord
-            
+
             for result in results:
-                record = FrameRecord(
-                    content=result.content,
-                    metadata=result.metadata
-                )
-                
+                record = FrameRecord(content=result.content, metadata=result.metadata)
+
                 # Add collection if specified
                 if args.get("collection"):
                     record.metadata["collection"] = args["collection"]
-                
+
                 # Generate embeddings in batch if API key available
                 if args.get("generate_embedding", True):
-                    model = os.environ.get("CONTEXTFRAME_EMBED_MODEL", "text-embedding-ada-002")
+                    model = os.environ.get(
+                        "CONTEXTFRAME_EMBED_MODEL", "text-embedding-ada-002"
+                    )
                     api_key = os.environ.get("OPENAI_API_KEY")
-                    
+
                     if api_key:
                         from contextframe.embed import LiteLLMProvider
+
                         provider = LiteLLMProvider(model, api_key=api_key)
                         embed_result = provider.embed(record.content)
                         record.embeddings = embed_result.embeddings[0]
-                
+
                 added_documents.append(record)
-            
+
             # Add all documents
             dataset.add(added_documents)
-            
+
             return {
                 "directory": str(directory),
                 "files_processed": len(results),
                 "documents_added": len(added_documents),
-                "patterns": patterns
+                "patterns": patterns,
             }
         else:
             return {
@@ -545,11 +517,11 @@ async def _batch_extract(dataset, args: Dict[str, Any]) -> Dict[str, Any]:
                     {
                         "file_path": r.metadata.get("source", "unknown"),
                         "content_length": len(r.content),
-                        "metadata": r.metadata
+                        "metadata": r.metadata,
                     }
                     for r in results
-                ]
+                ],
             }
-            
+
     except Exception as e:
         raise InternalError(f"Batch extraction failed: {str(e)}")

@@ -2,17 +2,17 @@
 """Helper script to create a new ContextFrame dataset."""
 
 import sys
-from pathlib import Path
 from contextframe.frame import FrameDataset
+from pathlib import Path
 
 
 def main():
     if len(sys.argv) != 2:
         print("Usage: python -m contextframe.scripts.create_dataset <dataset_path>")
         sys.exit(1)
-    
+
     dataset_path = Path(sys.argv[1])
-    
+
     try:
         # Create the dataset
         dataset = FrameDataset.create(dataset_path)
