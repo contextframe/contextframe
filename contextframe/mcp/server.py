@@ -27,7 +27,8 @@ class MCPConfig:
     shutdown_timeout: float = 5.0
 
     # Transport configuration
-    transport: Literal["stdio", "http", "both"] = "stdio"
+    # HTTP is the primary transport for MCP as per current specification
+    transport: Literal["stdio", "http", "both"] = "http"
 
     # HTTP-specific configuration
     http_host: str = "0.0.0.0"
