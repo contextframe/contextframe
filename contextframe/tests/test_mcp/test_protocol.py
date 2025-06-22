@@ -37,8 +37,10 @@ async def test_dataset(tmp_path):
 
 @pytest.fixture
 async def mcp_server(test_dataset):
-    """Create MCP server instance."""
-    server = ContextFrameMCPServer(test_dataset)
+    """Create MCP server instance with HTTP as default transport."""
+    # HTTP is the default transport as per current MCP specification
+    config = MCPConfig(transport="http")
+    server = ContextFrameMCPServer(test_dataset, config=config)
     # Manual setup without connecting transport
     server.dataset = FrameDataset.open(test_dataset)
     server.handler = MessageHandler(server)

@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from contextframe import FrameDataset
-from contextframe.mcp.handler import MessageHandler
+from contextframe.mcp.handlers import MessageHandler
 from contextframe.mcp.schemas import (
     InitializeParams,
     JSONRPCError,

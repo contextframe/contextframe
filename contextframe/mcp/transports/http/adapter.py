@@ -14,15 +14,22 @@ logger = logging.getLogger(__name__)
 
 
 class HttpAdapter(TransportAdapter):
-    """HTTP transport adapter with SSE streaming support.
+    """HTTP transport adapter with optional SSE streaming support.
 
-    This adapter enables the MCP server to handle HTTP requests and
-    provide real-time streaming via Server-Sent Events (SSE).
+    This adapter enables the MCP server to handle HTTP requests with
+    simple JSON responses as the primary communication method.
+    
+    SSE (Server-Sent Events) support is provided as an optional feature
+    for specific streaming use cases like progress tracking and subscriptions.
+    
+    Note: HTTP with JSON responses is the primary transport method. SSE should
+    only be used when real-time streaming is specifically required.
     """
 
     def __init__(self):
         super().__init__()
-        self._streaming = SSEStreamingAdapter()
+        # SSE streaming is optional - only initialized when needed
+        self._streaming = None  # Will be set by server if SSE is used
         self._active_streams: dict[str, SSEStream] = {}
         self._operation_progress: dict[str, asyncio.Queue] = {}
         self._subscription_queues: dict[str, asyncio.Queue] = {}
@@ -58,7 +65,11 @@ class HttpAdapter(TransportAdapter):
         return None
 
     async def send_progress(self, progress: Progress) -> None:
-        """Send progress update via SSE to relevant streams."""
+        """Send progress update via SSE to relevant streams.
+        
+        Note: This is an optional feature. Progress updates are only sent
+        to clients that have explicitly connected to SSE progress endpoints.
+        """
         await super().send_progress(progress)
 
         # Send to operation-specific progress streams
