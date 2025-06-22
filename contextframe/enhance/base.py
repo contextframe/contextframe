@@ -1,16 +1,14 @@
 """Base enhancer for LLM-powered document enhancement using Mirascope."""
 
 import datetime
+from contextframe import FrameDataset, FrameRecord
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
-from typing import Any, Optional
-
 from mirascope import llm
 from mirascope.core import BaseMessageParam
+from pathlib import Path
 from pydantic import BaseModel, Field
-
-from contextframe import FrameDataset, FrameRecord
+from typing import Any, Optional
 
 
 @dataclass
@@ -430,8 +428,10 @@ Return up to {max_relationships} relationships."""
             scanner = dataset._dataset.scanner(batch_size=batch_size)
         else:
             # Exclude blob columns from scan
-            scanner = dataset._dataset.scanner(columns=non_blob_columns, batch_size=batch_size)
-            
+            scanner = dataset._dataset.scanner(
+                columns=non_blob_columns, batch_size=batch_size
+            )
+
         if filter:
             scanner = scanner.filter(filter)
 
@@ -444,6 +444,7 @@ Return up to {max_relationships} relationships."""
         if show_progress:
             try:
                 from tqdm import tqdm
+
                 try:
                     total_count = dataset.count_rows(filter=filter)
                     pbar = tqdm(total=total_count, desc="Enhancing documents")
@@ -467,7 +468,7 @@ Return up to {max_relationships} relationships."""
 
                 # Track updates for this record
                 updates = {}
-                
+
                 # Process each enhancement
                 for field_name, config in enhancements.items():
                     # Skip if field already has value and skip_existing is True
@@ -505,10 +506,10 @@ Return up to {max_relationships} relationships."""
                     # Update the frame's metadata with new values
                     for field_name, value in updates.items():
                         self._update_frame_field(frame, field_name, value)
-                    
+
                     # Update the updated_at timestamp
                     frame.metadata["updated_at"] = datetime.date.today().isoformat()
-                    
+
                     # Use the dataset's update_record method which does delete + add
                     try:
                         dataset.update_record(frame)
@@ -524,7 +525,7 @@ Return up to {max_relationships} relationships."""
 
         if pbar is not None:
             pbar.close()
-            
+
         # Log summary
         if show_progress:
             print(f"Enhanced {rows_updated} records out of {total_processed} processed")
@@ -604,7 +605,7 @@ Return up to {max_relationships} relationships."""
         else:
             # Most fields are in metadata
             value = frame.metadata.get(field_name)
-            
+
         if value is None:
             return False
         if isinstance(value, list | dict):

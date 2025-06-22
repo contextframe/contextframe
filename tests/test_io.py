@@ -373,13 +373,13 @@ def test_export_with_mermaid_diagram(temp_dataset_with_frameset):
         assert "```mermaid" in content
         assert "graph TD" in content
         assert 'FS["Test FrameSet<br/>FrameSet"]' in content
-        
+
         # Check that relationships are shown
         assert 'F1["Document 1"]' in content
         assert 'F2["Document 2"]' in content
         assert "FS -->|contains| F1" in content
         assert "FS -->|contains| F2" in content
-        
+
         # Check legend
         assert "**Relationship Types:**" in content
         assert "- `contains`: Direct inclusion in the frameset" in content

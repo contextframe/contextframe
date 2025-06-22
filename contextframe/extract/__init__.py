@@ -1,6 +1,6 @@
 """Lightweight document extraction module for ContextFrame.
 
-This module provides utilities for extracting content and metadata from 
+This module provides utilities for extracting content and metadata from
 lightweight text-based formats. For heavy document processing (PDFs, images),
 see the documentation for recommended external tools and integration patterns.
 """
