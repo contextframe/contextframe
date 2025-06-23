@@ -11,7 +11,10 @@ from contextframe.mcp.resources import ResourceRegistry
 from contextframe.mcp.tools import ToolRegistry
 from contextframe.mcp.transports.stdio import StdioAdapter
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from contextframe.mcp.monitoring.integration import MonitoringSystem
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +41,12 @@ class MCPConfig:
     http_rate_limit: dict[str, int] = None
     http_ssl_cert: str | None = None
     http_ssl_key: str | None = None
+    
+    # Monitoring configuration
+    monitoring_enabled: bool = True
+    monitoring_retention_days: int = 30
+    monitoring_flush_interval: int = 60
+    pricing_config_path: str | None = None
 
 
 class ContextFrameMCPServer:
@@ -68,6 +77,7 @@ class ContextFrameMCPServer:
         self.handler: MessageHandler | None = None
         self.tools: ToolRegistry | None = None
         self.resources: ResourceRegistry | None = None
+        self.monitoring: "MonitoringSystem" | None = None
 
     async def setup(self):
         """Set up server components."""
@@ -77,11 +87,50 @@ class ContextFrameMCPServer:
         except Exception as e:
             raise DatasetNotFound(self.dataset_path) from e
 
+        # Initialize monitoring if enabled
+        if self.config.monitoring_enabled:
+            from contextframe.mcp.monitoring.collector import MetricsConfig
+            from contextframe.mcp.monitoring.cost import PricingConfig
+            from contextframe.mcp.monitoring.integration import (
+                MonitoredMessageHandler,
+                MonitoredToolRegistry,
+                MonitoringSystem,
+            )
+            
+            # Create monitoring config
+            metrics_config = MetricsConfig(
+                enabled=True,
+                retention_days=self.config.monitoring_retention_days,
+                flush_interval_seconds=self.config.monitoring_flush_interval
+            )
+            
+            # Load pricing config if provided
+            pricing_config = None
+            if self.config.pricing_config_path:
+                pricing_config = PricingConfig.from_file(self.config.pricing_config_path)
+            else:
+                pricing_config = PricingConfig()
+            
+            # Initialize monitoring system
+            self.monitoring = MonitoringSystem(
+                self.dataset,
+                metrics_config,
+                pricing_config
+            )
+            await self.monitoring.start()
+
         # Initialize transport based on configuration
         if self.config.transport == "stdio":
             self.transport = StdioAdapter()
-            self.handler = MessageHandler(self)
-            self.tools = ToolRegistry(self.dataset, self.transport)
+            
+            # Use monitored versions if monitoring is enabled
+            if self.monitoring:
+                self.handler = MonitoredMessageHandler(self, self.monitoring)
+                self.tools = MonitoredToolRegistry(self.dataset, self.transport, self.monitoring)
+            else:
+                self.handler = MessageHandler(self)
+                self.tools = ToolRegistry(self.dataset, self.transport)
+            
             self.resources = ResourceRegistry(self.dataset)
             await self.transport.initialize()
         elif self.config.transport == "http":
@@ -92,6 +141,7 @@ class ContextFrameMCPServer:
 
         logger.info(
             f"MCP server initialized for dataset: {self.dataset_path} with {self.config.transport} transport"
+            + (f" and monitoring enabled" if self.config.monitoring_enabled else "")
         )
 
     async def _setup_http_transport(self):
@@ -125,8 +175,19 @@ class ContextFrameMCPServer:
 
         # For compatibility, set transport to the HTTP adapter
         self.transport = self.http_server.adapter
-        self.handler = self.http_server.handler
-        self.tools = ToolRegistry(self.dataset, self.transport)
+        
+        # Use monitored versions if monitoring is enabled
+        if self.monitoring:
+            from contextframe.mcp.monitoring.integration import (
+                MonitoredMessageHandler,
+                MonitoredToolRegistry,
+            )
+            self.handler = MonitoredMessageHandler(self, self.monitoring)
+            self.tools = MonitoredToolRegistry(self.dataset, self.transport, self.monitoring)
+        else:
+            self.handler = self.http_server.handler
+            self.tools = ToolRegistry(self.dataset, self.transport)
+        
         self.resources = ResourceRegistry(self.dataset)
 
     async def run(self):
@@ -224,6 +285,11 @@ class ContextFrameMCPServer:
 
         if self.transport:
             await self.transport.shutdown()
+
+        # Stop monitoring if enabled
+        if self.monitoring:
+            logger.info("Stopping monitoring system")
+            await self.monitoring.stop()
 
         # Dataset cleanup if needed
         if self.dataset:
