@@ -58,6 +58,10 @@ The Model Context Protocol (MCP) is an open standard that enables seamless commu
     
     Complete reference for all MCP tools and operations
 
+-   :material-console: **[CLI Tools](guides/cli-tools.md)**
+    
+    Direct command-line access with bash scripts
+
 -   :material-shield-check: **[Security Guide](configuration/security.md)**
     
     Configure authentication, authorization, and security features
