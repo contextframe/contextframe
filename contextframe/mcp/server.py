@@ -11,7 +11,11 @@ from contextframe.mcp.resources import ResourceRegistry
 from contextframe.mcp.tools import ToolRegistry
 from contextframe.mcp.transports.stdio import StdioAdapter
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from contextframe.mcp.monitoring.integration import MonitoringSystem
+    from contextframe.mcp.security.integration import SecurityMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +42,23 @@ class MCPConfig:
     http_rate_limit: dict[str, int] = None
     http_ssl_cert: str | None = None
     http_ssl_key: str | None = None
+    
+    # Monitoring configuration
+    monitoring_enabled: bool = True
+    monitoring_retention_days: int = 30
+    monitoring_flush_interval: int = 60
+    pricing_config_path: str | None = None
+    
+    # Security configuration
+    security_enabled: bool = True
+    auth_providers: list[str] = None  # ["api_key", "oauth", "jwt"]
+    anonymous_allowed: bool = False
+    anonymous_permissions: list[str] = None
+    api_keys_file: str | None = None
+    oauth_config_file: str | None = None
+    jwt_config_file: str | None = None
+    audit_log_file: str | None = None
+    audit_retention_days: int = 90
 
 
 class ContextFrameMCPServer:
@@ -68,6 +89,8 @@ class ContextFrameMCPServer:
         self.handler: MessageHandler | None = None
         self.tools: ToolRegistry | None = None
         self.resources: ResourceRegistry | None = None
+        self.monitoring: "MonitoringSystem" | None = None
+        self.security: "SecurityMiddleware" | None = None
 
     async def setup(self):
         """Set up server components."""
@@ -77,11 +100,62 @@ class ContextFrameMCPServer:
         except Exception as e:
             raise DatasetNotFound(self.dataset_path) from e
 
+        # Initialize monitoring if enabled
+        if self.config.monitoring_enabled:
+            from contextframe.mcp.monitoring.collector import MetricsConfig
+            from contextframe.mcp.monitoring.cost import PricingConfig
+            from contextframe.mcp.monitoring.integration import (
+                MonitoredMessageHandler,
+                MonitoredToolRegistry,
+                MonitoringSystem,
+            )
+            
+            # Create monitoring config
+            metrics_config = MetricsConfig(
+                enabled=True,
+                retention_days=self.config.monitoring_retention_days,
+                flush_interval_seconds=self.config.monitoring_flush_interval
+            )
+            
+            # Load pricing config if provided
+            pricing_config = None
+            if self.config.pricing_config_path:
+                pricing_config = PricingConfig.from_file(self.config.pricing_config_path)
+            else:
+                pricing_config = PricingConfig()
+            
+            # Initialize monitoring system
+            self.monitoring = MonitoringSystem(
+                self.dataset,
+                metrics_config,
+                pricing_config
+            )
+            await self.monitoring.start()
+        
+        # Initialize security if enabled
+        if self.config.security_enabled:
+            await self._setup_security()
+
         # Initialize transport based on configuration
         if self.config.transport == "stdio":
             self.transport = StdioAdapter()
-            self.handler = MessageHandler(self)
-            self.tools = ToolRegistry(self.dataset, self.transport)
+            
+            # Use secured/monitored versions based on configuration
+            if self.security:
+                from contextframe.mcp.security.integration import SecuredMessageHandler
+                self.handler = SecuredMessageHandler(self, self.security)
+            elif self.monitoring:
+                from contextframe.mcp.monitoring.integration import MonitoredMessageHandler
+                self.handler = MonitoredMessageHandler(self, self.monitoring)
+            else:
+                self.handler = MessageHandler(self)
+            
+            if self.monitoring:
+                from contextframe.mcp.monitoring.integration import MonitoredToolRegistry
+                self.tools = MonitoredToolRegistry(self.dataset, self.transport, self.monitoring)
+            else:
+                self.tools = ToolRegistry(self.dataset, self.transport)
+            
             self.resources = ResourceRegistry(self.dataset)
             await self.transport.initialize()
         elif self.config.transport == "http":
@@ -92,6 +166,100 @@ class ContextFrameMCPServer:
 
         logger.info(
             f"MCP server initialized for dataset: {self.dataset_path} with {self.config.transport} transport"
+            + (f" and monitoring enabled" if self.config.monitoring_enabled else "")
+        )
+
+    async def _setup_security(self):
+        """Set up security components."""
+        import json
+        from contextframe.mcp.security import (
+            APIKeyAuth,
+            OAuth2Provider,
+            OAuth2Config,
+            JWTHandler,
+            JWTConfig,
+            MultiAuthProvider,
+            AccessControl,
+            RateLimiter,
+            RateLimitConfig,
+            AuditLogger,
+            AuditConfig,
+        )
+        from contextframe.mcp.security.integration import SecurityMiddleware
+        
+        # Build auth providers
+        auth_providers = []
+        
+        if not self.config.auth_providers:
+            # Default to API key auth
+            self.config.auth_providers = ["api_key"]
+        
+        for provider_type in self.config.auth_providers:
+            if provider_type == "api_key" and self.config.api_keys_file:
+                # Load API keys from file
+                try:
+                    with open(self.config.api_keys_file, "r") as f:
+                        api_keys = json.load(f)
+                    auth_providers.append(APIKeyAuth(api_keys))
+                except Exception as e:
+                    logger.warning(f"Failed to load API keys: {e}")
+            
+            elif provider_type == "oauth" and self.config.oauth_config_file:
+                # Load OAuth config
+                try:
+                    with open(self.config.oauth_config_file, "r") as f:
+                        oauth_data = json.load(f)
+                    oauth_config = OAuth2Config(**oauth_data)
+                    auth_providers.append(OAuth2Provider(oauth_config))
+                except Exception as e:
+                    logger.warning(f"Failed to load OAuth config: {e}")
+            
+            elif provider_type == "jwt" and self.config.jwt_config_file:
+                # Load JWT config
+                try:
+                    with open(self.config.jwt_config_file, "r") as f:
+                        jwt_data = json.load(f)
+                    jwt_config = JWTConfig(**jwt_data)
+                    auth_providers.append(JWTHandler(jwt_config))
+                except Exception as e:
+                    logger.warning(f"Failed to load JWT config: {e}")
+        
+        # Create multi-auth provider if multiple providers
+        auth_provider = None
+        if len(auth_providers) > 1:
+            auth_provider = MultiAuthProvider(auth_providers)
+        elif len(auth_providers) == 1:
+            auth_provider = auth_providers[0]
+        
+        # Create access control
+        access_control = AccessControl()
+        
+        # Create rate limiter
+        rate_limiter = RateLimiter(RateLimitConfig())
+        
+        # Create audit logger
+        audit_config = AuditConfig(
+            storage_backend="file" if self.config.audit_log_file else "memory",
+            file_path=self.config.audit_log_file,
+            retention_days=self.config.audit_retention_days
+        )
+        audit_logger = AuditLogger(audit_config)
+        
+        # Create security middleware
+        self.security = SecurityMiddleware(
+            auth_provider=auth_provider,
+            access_control=access_control,
+            rate_limiter=rate_limiter,
+            audit_logger=audit_logger,
+            anonymous_allowed=self.config.anonymous_allowed,
+            anonymous_permissions=set(self.config.anonymous_permissions or [])
+        )
+        
+        await self.security.start()
+        
+        logger.info(
+            f"Security initialized with providers: {self.config.auth_providers}"
+            + f", anonymous_allowed: {self.config.anonymous_allowed}"
         )
 
     async def _setup_http_transport(self):
@@ -125,8 +293,23 @@ class ContextFrameMCPServer:
 
         # For compatibility, set transport to the HTTP adapter
         self.transport = self.http_server.adapter
-        self.handler = self.http_server.handler
-        self.tools = ToolRegistry(self.dataset, self.transport)
+        
+        # Use secured/monitored versions based on configuration
+        if self.security:
+            from contextframe.mcp.security.integration import SecuredMessageHandler
+            self.handler = SecuredMessageHandler(self, self.security)
+        elif self.monitoring:
+            from contextframe.mcp.monitoring.integration import MonitoredMessageHandler
+            self.handler = MonitoredMessageHandler(self, self.monitoring)
+        else:
+            self.handler = self.http_server.handler
+        
+        if self.monitoring:
+            from contextframe.mcp.monitoring.integration import MonitoredToolRegistry
+            self.tools = MonitoredToolRegistry(self.dataset, self.transport, self.monitoring)
+        else:
+            self.tools = ToolRegistry(self.dataset, self.transport)
+        
         self.resources = ResourceRegistry(self.dataset)
 
     async def run(self):
@@ -224,6 +407,16 @@ class ContextFrameMCPServer:
 
         if self.transport:
             await self.transport.shutdown()
+
+        # Stop monitoring if enabled
+        if self.monitoring:
+            logger.info("Stopping monitoring system")
+            await self.monitoring.stop()
+        
+        # Stop security if enabled
+        if self.security:
+            logger.info("Stopping security system")
+            await self.security.stop()
 
         # Dataset cleanup if needed
         if self.dataset:
