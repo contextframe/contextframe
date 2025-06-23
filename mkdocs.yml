@@ -133,6 +133,32 @@ nav:
     - Object Storage: 'integration/object_storage.md'
     - Blobs: 'integration/blobs.md'
 
+  - MCP Server:
+    - Overview: 'mcp/index.md'
+    - Getting Started:
+      - Installation: 'mcp/getting-started/installation.md'
+      - Quick Start: 'mcp/getting-started/quickstart.md'
+    - Core Concepts:
+      - Overview: 'mcp/concepts/overview.md'
+      - Tools: 'mcp/concepts/tools.md'
+      - Transport: 'mcp/concepts/transport.md'
+    - API Reference:
+      - Tools Reference: 'mcp/api/tools.md'
+    - Configuration:
+      - Overview: 'mcp/configuration/index.md'
+      - Security: 'mcp/configuration/security.md'
+      - Monitoring: 'mcp/configuration/monitoring.md'
+    - Guides:
+      - CLI Tools & Bash Scripts: 'mcp/guides/cli-tools.md'
+      - Agent Integration: 'mcp/guides/agent-integration.md'
+      - Production Deployment: 'mcp/guides/production-deployment.md'
+      - Performance Tuning: 'mcp/guides/performance.md'
+    - Cookbook:
+      - Examples: 'mcp/cookbook/index.md'
+    - Reference:
+      - Error Codes: 'mcp/reference/errors.md'
+      - FAQ: 'mcp/reference/faq.md'
+
   - CLI Reference:
 
   - Community:
