@@ -113,19 +113,27 @@ class BatchTools:
         # Execute searches with controlled parallelism
         tasks = [lambda q=q: search_task(q) for q in queries]
 
-        result = await self.handler.execute_batch(
-            operation="batch_search",
-            items=tasks,
-            processor=lambda task: task(),
-            max_errors=len(queries),  # Continue despite errors
-        )
-
-        return {
-            "searches_completed": result.total_processed,
-            "searches_failed": result.total_errors,
-            "results": result.results,
-            "errors": result.errors,
-        }
+        # Use execute_parallel to properly handle async tasks
+        try:
+            search_results = await execute_parallel(tasks, max_parallel)
+            
+            # Count successes and failures
+            successful = [r for r in search_results if r.get("success", False)]
+            failed = [r for r in search_results if not r.get("success", False)]
+            
+            return {
+                "searches_completed": len(successful),
+                "searches_failed": len(failed),
+                "results": search_results,
+                "errors": [{"query": r["query"], "error": r.get("error")} for r in failed],
+            }
+        except Exception as e:
+            return {
+                "searches_completed": 0,
+                "searches_failed": len(queries),
+                "results": [],
+                "errors": [{"error": str(e)}],
+            }
 
     async def batch_add(self, params: dict[str, Any]) -> dict[str, Any]:
         """Add multiple documents efficiently.
@@ -142,18 +150,24 @@ class BatchTools:
         for doc_data in documents:
             # Merge with shared settings
             content = doc_data.content
-            metadata = {**shared.get("metadata", {}), **doc_data.metadata}
+            metadata = {**shared.metadata, **doc_data.metadata}
 
             # Create record
             record = FrameRecord(text_content=content, metadata=metadata)
+            
+            # Apply collection from shared settings if specified
+            if shared.collection:
+                record.metadata["collection"] = shared.collection
 
             # Generate embeddings if requested
-            if shared.get("generate_embeddings", True):
+            if shared.generate_embeddings:
                 try:
                     from contextframe.embed.litellm_provider import LiteLLMProvider
 
                     provider = LiteLLMProvider()
-                    embedding = await provider.embed_async(content)
+                    # LiteLLMProvider.embed is synchronous
+                    result = provider.embed(content)
+                    embedding = result.embeddings[0]
                     record.vector = embedding
                 except Exception as e:
                     logger.warning(f"Failed to generate embedding: {e}")
@@ -172,7 +186,7 @@ class BatchTools:
                     "success": True,
                     "documents_added": len(records),
                     "atomic": True,
-                    "document_ids": [str(r.id) for r in records],
+                    "document_ids": [str(r.metadata["uuid"]) for r in records],
                 }
             except Exception as e:
                 return {
@@ -211,18 +225,22 @@ class BatchTools:
             docs = []
             for doc_id in validated.document_ids:
                 try:
-                    doc = self.dataset.get(UUID(doc_id))
-                    docs.append(doc)
+                    # Use scanner to get document by uuid
+                    scanner = self.dataset.scanner(filter=f"uuid = '{doc_id}'", limit=1)
+                    tbl = scanner.to_table()
+                    if tbl.num_rows > 0:
+                        doc = FrameRecord.from_arrow(tbl.slice(0, 1))
+                        docs.append(doc)
                 except:
                     pass
         else:
             # Update by filter
             if validated.filter:
-                tbl = self.dataset.scanner(filter=validated.filter).to_table()
-                docs = [
-                    FrameRecord.from_arrow(tbl.slice(i, 1))
-                    for i in range(min(tbl.num_rows, validated.max_documents))
-                ]
+                scanner_kwargs = {"filter": validated.filter, "limit": validated.max_documents}
+                tbl = self.dataset.scanner(**scanner_kwargs).to_table()
+                docs = []
+                for i in range(tbl.num_rows):
+                    docs.append(FrameRecord.from_arrow(tbl.slice(i, 1)))
             else:
                 return {
                     "success": False,
@@ -231,49 +249,113 @@ class BatchTools:
 
         # Prepare update function
         updates = validated.updates
+        
+        # Debug: print what we're about to update
+        logger.info(f"Updates object: {updates}")
+        logger.info(f"Metadata updates: {updates.metadata_updates}")
 
         async def update_document(doc: FrameRecord) -> dict[str, Any]:
             try:
                 # Apply metadata updates
-                if updates.get("metadata_updates"):
-                    doc.metadata.update(updates["metadata_updates"])
+                if updates.metadata_updates:
+                    # Separate top-level fields from custom metadata
+                    top_level_fields = {
+                        "status", "priority", "tags", "title", "context", "version",
+                        "author", "collection", "source_file", "source_type", "source_url"
+                    }
+                    
+                    for key, value in updates.metadata_updates.items():
+                        if key in top_level_fields:
+                            # Update top-level field in metadata
+                            doc.metadata[key] = value
+                        elif key == "custom_metadata":
+                            # Handle custom metadata updates
+                            # Don't modify doc.metadata["custom_metadata"] directly
+                            # Instead, we'll update the FrameRecord properly below
+                            pass
+                        else:
+                            # Other metadata fields go directly into metadata dict
+                            doc.metadata[key] = value
 
                 # Apply content template if provided
-                if updates.get("content_template"):
+                if updates.content_template:
                     # Simple template substitution
-                    doc.text_content = updates["content_template"].format(
+                    doc.text_content = updates.content_template.format(
                         content=doc.text_content,
                         title=doc.metadata.get("title", ""),
                         **doc.metadata,
                     )
 
                 # Regenerate embeddings if requested
-                if updates.get("regenerate_embeddings"):
+                if updates.regenerate_embeddings:
                     try:
                         from contextframe.embed.litellm_provider import LiteLLMProvider
 
                         provider = LiteLLMProvider()
-                        doc.vector = await provider.embed_async(doc.text_content)
+                        result = provider.embed(doc.text_content)
+                        doc.vector = result.embeddings[0]
                     except Exception as e:
                         logger.warning(f"Failed to regenerate embedding: {e}")
 
-                # Update in dataset (delete + add)
-                self.dataset.delete(doc.id)
-                self.dataset.add(doc)
+                # If we have custom_metadata updates, we need to recreate the record
+                if updates.metadata_updates and "custom_metadata" in updates.metadata_updates:
+                    # Get existing custom metadata as dict
+                    existing_custom = {}
+                    if isinstance(doc.metadata.get("custom_metadata"), list):
+                        for item in doc.metadata["custom_metadata"]:
+                            if isinstance(item, dict) and "key" in item and "value" in item:
+                                existing_custom[item["key"]] = item["value"]
+                    
+                    # Merge with updates
+                    existing_custom.update(updates.metadata_updates["custom_metadata"])
+                    
+                    # Create new record with updated metadata
+                    updated_metadata = doc.metadata.copy()
+                    updated_metadata["custom_metadata"] = existing_custom
+                    
+                    new_record = FrameRecord(
+                        text_content=doc.text_content,
+                        metadata=updated_metadata,
+                        vector=doc.vector
+                    )
+                    
+                    # Delete old and add new
+                    self.dataset.delete_record(doc.metadata['uuid'])
+                    self.dataset.add(new_record)
+                else:
+                    # Update in dataset (delete + add)
+                    self.dataset.delete_record(doc.metadata['uuid'])
+                    self.dataset.add(doc)
 
-                return {"id": str(doc.id), "success": True}
+                # Debug: log what was updated
+                logger.info(f"Updated doc {doc.metadata['uuid']} - status: {doc.metadata.get('status')}")
+
+                return {"id": str(doc.metadata["uuid"]), "success": True}
 
             except Exception as e:
-                return {"id": str(doc.id), "success": False, "error": str(e)}
+                logger.error(f"Error updating doc {doc.metadata.get('uuid')}: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
+                return {"id": str(doc.metadata.get("uuid", "unknown")), "success": False, "error": str(e)}
 
         # Execute batch update
         result = await self.handler.execute_batch(
             operation="batch_update", items=docs, processor=update_document
         )
 
+        # Count actual successes and failures from results
+        successful_updates = 0
+        failed_updates = 0
+        
+        for res in result.results:
+            if isinstance(res, dict) and res.get("success", False):
+                successful_updates += 1
+            else:
+                failed_updates += 1
+
         return {
-            "documents_updated": result.total_processed,
-            "documents_failed": result.total_errors,
+            "documents_updated": successful_updates,
+            "documents_failed": failed_updates + result.total_errors,
             "total_documents": len(docs),
             "errors": result.errors,
         }
@@ -292,10 +374,10 @@ class BatchTools:
             # Delete by filter
             if validated.filter:
                 tbl = self.dataset.scanner(filter=validated.filter).to_table()
-                doc_ids = [
-                    FrameRecord.from_arrow(tbl.slice(i, 1)).id
-                    for i in range(tbl.num_rows)
-                ]
+                doc_ids = []
+                for i in range(tbl.num_rows):
+                    record = FrameRecord.from_arrow(tbl.slice(i, 1))
+                    doc_ids.append(record.metadata["uuid"])
             else:
                 return {
                     "success": False,
@@ -328,7 +410,7 @@ class BatchTools:
         result = await self.handler.execute_batch(
             operation="batch_delete",
             items=doc_ids,
-            processor=lambda doc_id: self.dataset.delete(doc_id),
+            processor=lambda doc_id: self.dataset.delete_record(doc_id),
         )
 
         return {
@@ -626,13 +708,31 @@ class BatchTools:
 
         # Get documents to export
         if validated.document_ids:
-            doc_ids = [UUID(doc_id) for doc_id in validated.document_ids]
-            docs = [self.dataset.get(doc_id) for doc_id in doc_ids]
-            docs = [doc for doc in docs if doc is not None]
+            doc_ids = validated.document_ids
+            docs = []
+            for doc_id in doc_ids:
+                scanner = self.dataset.scanner(filter=f"uuid = '{doc_id}'", limit=1)
+                tbl = scanner.to_table()
+                if tbl.num_rows > 0:
+                    doc = FrameRecord.from_arrow(tbl.slice(0, 1))
+                    docs.append(doc)
         else:
-            # Export by filter
+            # Export by filter or limit
+            scanner_kwargs = {}
             if validated.filter:
-                scanner = self.dataset.scanner(filter=validated.filter)
+                scanner_kwargs["filter"] = validated.filter
+            if validated.limit:
+                scanner_kwargs["limit"] = validated.limit
+                
+            # If no filter or document_ids, but limit is provided, export up to limit
+            if not validated.filter and not validated.document_ids and validated.limit:
+                scanner = self.dataset.scanner(**scanner_kwargs)
+                tbl = scanner.to_table()
+                docs = [
+                    FrameRecord.from_arrow(tbl.slice(i, 1)) for i in range(tbl.num_rows)
+                ]
+            elif validated.filter:
+                scanner = self.dataset.scanner(**scanner_kwargs)
                 tbl = scanner.to_table()
                 docs = [
                     FrameRecord.from_arrow(tbl.slice(i, 1)) for i in range(tbl.num_rows)
@@ -640,7 +740,7 @@ class BatchTools:
             else:
                 return {
                     "success": False,
-                    "error": "Either document_ids or filter must be provided",
+                    "error": "Either document_ids, filter, or limit must be provided",
                 }
 
         if not docs:
@@ -666,19 +766,15 @@ class BatchTools:
                 export_data = []
                 for doc in docs:
                     doc_dict = {
-                        "id": str(doc.id),
+                        "id": str(doc.metadata["uuid"]),
                         "content": doc.text_content,
                         "metadata": doc.metadata,
-                        "title": doc.title,
-                        "context": doc.context,
-                        "tags": doc.tags,
-                        "custom_metadata": doc.custom_metadata,
-                        "created_at": doc.created_at.isoformat()
-                        if doc.created_at
-                        else None,
-                        "updated_at": doc.updated_at.isoformat()
-                        if doc.updated_at
-                        else None,
+                        "title": doc.metadata.get("title", ""),
+                        "context": doc.metadata.get("context", ""),
+                        "tags": doc.metadata.get("tags", []),
+                        "custom_metadata": doc.metadata.get("custom_metadata", []),
+                        "created_at": doc.metadata.get("created_at"),
+                        "updated_at": doc.metadata.get("updated_at"),
                     }
 
                     if validated.include_embeddings and doc.vector is not None:
@@ -698,7 +794,7 @@ class BatchTools:
                         )
 
                         with open(chunk_path, "w") as f:
-                            json.dump(chunk, f, indent=2)
+                            json.dump({"documents": chunk}, f, indent=2)
 
                         exported_files.append(str(chunk_path))
 
@@ -712,20 +808,20 @@ class BatchTools:
                 else:
                     # Export as single file
                     with open(output_path, "w") as f:
-                        json.dump(export_data, f, indent=2)
+                        json.dump({"documents": export_data}, f, indent=2)
 
             elif format_enum == ExportFormat.JSONL:
                 # Export as JSONL (newline-delimited JSON)
                 with open(output_path, "w") as f:
                     for doc in docs:
                         doc_dict = {
-                            "id": str(doc.id),
+                            "id": str(doc.metadata["uuid"]),
                             "content": doc.text_content,
                             "metadata": doc.metadata,
-                            "title": doc.title,
-                            "context": doc.context,
-                            "tags": doc.tags,
-                            "custom_metadata": doc.custom_metadata,
+                            "title": doc.metadata.get("title", ""),
+                            "context": doc.metadata.get("context", ""),
+                            "tags": doc.metadata.get("tags", []),
+                            "custom_metadata": doc.metadata.get("custom_metadata", []),
                         }
 
                         if validated.include_embeddings and doc.vector is not None:
@@ -748,8 +844,11 @@ class BatchTools:
                 # Add custom metadata fields
                 all_custom_fields = set()
                 for doc in docs:
-                    if doc.custom_metadata:
-                        all_custom_fields.update(doc.custom_metadata.keys())
+                    custom_metadata = doc.metadata.get("custom_metadata", [])
+                    if custom_metadata:
+                        for item in custom_metadata:
+                            if isinstance(item, dict) and "key" in item:
+                                all_custom_fields.add(item["key"])
 
                 fieldnames.extend(sorted(all_custom_fields))
 
@@ -759,23 +858,21 @@ class BatchTools:
 
                     for doc in docs:
                         row = {
-                            "id": str(doc.id),
-                            "title": doc.title or "",
+                            "id": str(doc.metadata["uuid"]),
+                            "title": doc.metadata.get("title", ""),
                             "content": doc.text_content,
-                            "context": doc.context or "",
-                            "tags": ", ".join(doc.tags) if doc.tags else "",
-                            "created_at": doc.created_at.isoformat()
-                            if doc.created_at
-                            else "",
-                            "updated_at": doc.updated_at.isoformat()
-                            if doc.updated_at
-                            else "",
+                            "context": doc.metadata.get("context", ""),
+                            "tags": ", ".join(doc.metadata.get("tags", [])),
+                            "created_at": doc.metadata.get("created_at", ""),
+                            "updated_at": doc.metadata.get("updated_at", ""),
                         }
 
                         # Add custom metadata
-                        if doc.custom_metadata:
-                            for key, value in doc.custom_metadata.items():
-                                row[key] = str(value)
+                        custom_metadata = doc.metadata.get("custom_metadata", [])
+                        if custom_metadata:
+                            for item in custom_metadata:
+                                if isinstance(item, dict) and "key" in item and "value" in item:
+                                    row[item["key"]] = str(item["value"])
 
                         writer.writerow(row)
 
@@ -787,13 +884,13 @@ class BatchTools:
 
                     # Convert documents to arrow table
                     table_data = {
-                        "id": [str(doc.id) for doc in docs],
+                        "id": [str(doc.metadata["uuid"]) for doc in docs],
                         "content": [doc.text_content for doc in docs],
-                        "title": [doc.title or "" for doc in docs],
-                        "context": [doc.context or "" for doc in docs],
-                        "tags": [doc.tags or [] for doc in docs],
-                        "created_at": [doc.created_at for doc in docs],
-                        "updated_at": [doc.updated_at for doc in docs],
+                        "title": [doc.metadata.get("title", "") for doc in docs],
+                        "context": [doc.metadata.get("context", "") for doc in docs],
+                        "tags": [doc.metadata.get("tags", []) for doc in docs],
+                        "created_at": [doc.metadata.get("created_at") for doc in docs],
+                        "updated_at": [doc.metadata.get("updated_at") for doc in docs],
                     }
 
                     if validated.include_embeddings:
@@ -880,34 +977,47 @@ class BatchTools:
                     doc_data.update(mapped_data)
 
                 # Extract fields according to schema
-                record_kwargs = {
-                    "text_content": doc_data.get(
-                        "content", doc_data.get("text_content", "")
-                    ),
-                    "metadata": doc_data.get("metadata", {}),
-                }
-
-                # Optional fields
+                # Start with base metadata
+                metadata = doc_data.get("metadata", {})
+                
+                # Add title to metadata (required field)
                 if "title" in doc_data:
-                    record_kwargs["title"] = doc_data["title"]
+                    metadata["title"] = doc_data["title"]
+                elif "title" not in metadata:
+                    metadata["title"] = "Imported Document"
+                
+                # Add other metadata fields
                 if "context" in doc_data:
-                    record_kwargs["context"] = doc_data["context"]
+                    metadata["context"] = doc_data["context"]
                 if "tags" in doc_data:
                     tags = doc_data["tags"]
                     if isinstance(tags, str):
                         # Handle comma-separated tags
-                        record_kwargs["tags"] = [
+                        metadata["tags"] = [
                             t.strip() for t in tags.split(",") if t.strip()
                         ]
                     else:
-                        record_kwargs["tags"] = tags
+                        metadata["tags"] = tags
+                
+                # Handle custom metadata
                 if "custom_metadata" in doc_data:
                     # Ensure x_ prefix for custom metadata
                     custom_metadata = {}
                     for k, v in doc_data["custom_metadata"].items():
                         key = f"x_{k}" if not k.startswith("x_") else k
                         custom_metadata[key] = v
-                    record_kwargs["custom_metadata"] = custom_metadata
+                    metadata["custom_metadata"] = custom_metadata
+                
+                # Ensure record_type is set
+                if "record_type" not in metadata:
+                    metadata["record_type"] = "document"
+                
+                record_kwargs = {
+                    "text_content": doc_data.get(
+                        "content", doc_data.get("text_content", "")
+                    ),
+                    "metadata": metadata,
+                }
 
                 # Handle embeddings if present
                 if "embeddings" in doc_data and not validated.generate_embeddings:
@@ -915,7 +1025,10 @@ class BatchTools:
 
                 # Create and add record
                 record = FrameRecord(**record_kwargs)
+                logger.debug(f"Adding record with UUID: {record.metadata['uuid']}")
+                
                 self.dataset.add(record)
+                logger.debug(f"Successfully added record {record.metadata['uuid']}")
 
                 # Generate embeddings if requested
                 if validated.generate_embeddings and not record.vector:
@@ -923,7 +1036,7 @@ class BatchTools:
                     pass
 
                 result["success"] = True
-                result["document_id"] = str(record.id)
+                result["document_id"] = str(record.metadata["uuid"])
 
             except Exception as e:
                 result["error"] = str(e)
@@ -939,7 +1052,9 @@ class BatchTools:
                 # Import from JSON
                 with open(source_path) as f:
                     data = json.load(f)
-                    if isinstance(data, list):
+                    if isinstance(data, dict) and "documents" in data:
+                        documents_to_import = data["documents"]
+                    elif isinstance(data, list):
                         documents_to_import = data
                     else:
                         documents_to_import = [data]
@@ -1012,12 +1127,18 @@ class BatchTools:
                 }
 
             # Execute batch import
+            logger.info(f"Importing {len(documents_to_import)} documents")
             result = await self.handler.execute_batch(
                 operation="batch_import",
                 items=documents_to_import,
                 processor=import_document,
                 max_errors=max_errors,
             )
+            logger.info(f"Import result: processed={result.total_processed}, errors={result.total_errors}")
+            
+            # Debug: check row count
+            current_count = self.dataset._dataset.count_rows()
+            logger.info(f"Dataset row count after import: {current_count}")
 
             return {
                 "success": result.total_errors == 0,

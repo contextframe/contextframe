@@ -277,6 +277,7 @@ class BatchExportParams(BaseModel):
     include_embeddings: bool = False
     output_path: str
     chunk_size: int = Field(default=1000, ge=100, le=10000)
+    limit: int | None = Field(None, ge=1, description="Maximum documents to export")
 
 
 class BatchImportParams(BaseModel):

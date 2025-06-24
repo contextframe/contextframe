@@ -257,6 +257,11 @@ class FrameRecord:
             raw_data_type = tbl.get("raw_data_type", [None])[0]
         else:
             raw_data_type = None
+            
+        # Ensure both are None if either is None (to satisfy FrameRecord validation)
+        if raw_data is None or raw_data_type is None:
+            raw_data = None
+            raw_data_type = None
 
         # Determine embed_dim from the loaded vector
         current_embed_dim = (

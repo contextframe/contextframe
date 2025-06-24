@@ -9,6 +9,7 @@ class ExportFormat(Enum):
     MARKDOWN = "markdown"  # .md - Human-readable with YAML frontmatter
     TEXT = "text"  # .txt - Plain text, simple format
     JSON = "json"  # .json - Structured data interchange
+    JSONL = "jsonl"  # .jsonl - Newline-delimited JSON for streaming
     PARQUET = "parquet"  # .parquet - Columnar format for data analysis
     CSV = "csv"  # .csv - Tabular data for spreadsheets/analysis
 
