@@ -46,7 +46,15 @@ async def test_dataset(tmp_path):
     # Add test documents - simple approach
     for i in range(10):
         record = FrameRecord(
-            text_content=f"Test document {i}: This is test content about topic {i % 3}"
+            text_content=f"Test document {i}: This is test content about topic {i % 3}",
+            metadata={
+                "title": f"Test Document {i}",
+                "record_type": "document",
+                "custom_metadata": {
+                    "x_topic": f"topic_{i % 3}",
+                    "x_index": str(i)
+                }
+            }
         )
         dataset.add(record)
 
@@ -107,9 +115,9 @@ class TestBatchAdd:
         """Test atomic batch add."""
         params = {
             "documents": [
-                {"content": "New document 1", "metadata": {"x_type": "test"}},
-                {"content": "New document 2", "metadata": {"x_type": "test"}},
-                {"content": "New document 3", "metadata": {"x_type": "test"}},
+                {"content": "New document 1", "metadata": {"title": "Doc 1", "custom_metadata": {"x_type": "test"}}},
+                {"content": "New document 2", "metadata": {"title": "Doc 2", "custom_metadata": {"x_type": "test"}}},
+                {"content": "New document 3", "metadata": {"title": "Doc 3", "custom_metadata": {"x_type": "test"}}},
             ],
             "shared_settings": {
                 "generate_embeddings": False,
@@ -136,8 +144,8 @@ class TestBatchAdd:
         """Test non-atomic batch add."""
         params = {
             "documents": [
-                {"content": "Doc A", "metadata": {"x_idx": 1}},
-                {"content": "Doc B", "metadata": {"x_idx": 2}},
+                {"content": "Doc A", "metadata": {"title": "Doc A", "custom_metadata": {"x_idx": "1"}}},
+                {"content": "Doc B", "metadata": {"title": "Doc B", "custom_metadata": {"x_idx": "2"}}},
             ],
             "shared_settings": {"generate_embeddings": False},
             "atomic": False,
@@ -158,7 +166,7 @@ class TestBatchUpdate:
         """Test updating documents by filter."""
         params = {
             "filter": "text_content LIKE '%topic 0%'",
-            "updates": {"metadata_updates": {"x_updated": True, "x_version": 2}},
+            "updates": {"metadata_updates": {"custom_metadata": {"x_updated": "true", "x_version": "2"}}},
             "max_documents": 10,
         }
 
