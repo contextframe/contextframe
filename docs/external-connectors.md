@@ -1,6 +1,6 @@
 # External System Connectors
 
-ContextFrame provides connectors to import data from external systems like GitHub, Linear, Google Drive, and more. These connectors enable you to build a unified knowledge base from your existing tools and platforms.
+ContextFrame provides connectors to import data from external systems like GitHub, Linear, Google Drive, Notion, Slack, Discord, Obsidian, and more. These connectors enable you to build a unified knowledge base from your existing tools and platforms.
 
 ## Overview
 
@@ -84,6 +84,177 @@ config = ConnectorConfig(
 )
 
 connector = LinearConnector(config, dataset)
+result = connector.sync()
+```
+
+### Google Drive Connector
+
+Import documents and files from Google Drive.
+
+**Features:**
+- Import from specific folders or entire drive
+- Export Google Docs, Sheets, Slides to readable formats
+- Support for both personal and shared drives
+- Handle various file types (documents, PDFs, images)
+- Incremental sync based on modification time
+
+**Example:**
+```python
+from contextframe.connectors import GoogleDriveConnector, ConnectorConfig, AuthType
+
+# Service account authentication (recommended)
+config = ConnectorConfig(
+    name="Google Drive Docs",
+    auth_type=AuthType.API_KEY,
+    auth_config={
+        "service_account_info": {
+            "type": "service_account",
+            "project_id": "your-project-id",
+            "private_key": "-----BEGIN PRIVATE KEY-----\n...",
+            "client_email": "your-service-account@project.iam.gserviceaccount.com",
+            # ... other service account fields
+        }
+    },
+    sync_config={
+        "folder_ids": ["folder-id-1", "folder-id-2"],
+        "export_google_formats": True,
+        "file_patterns": ["*.pdf", "*.docx"],
+        "include_trashed": False,
+    }
+)
+
+connector = GoogleDriveConnector(config, dataset)
+result = connector.sync()
+```
+
+### Notion Connector
+
+Import pages and databases from Notion workspaces.
+
+**Features:**
+- Import pages, databases, and their entries
+- Preserve page hierarchy and relationships
+- Extract properties from database entries
+- Convert rich text and blocks to markdown
+- Support for comments and page metadata
+
+**Example:**
+```python
+from contextframe.connectors import NotionConnector, ConnectorConfig, AuthType
+
+config = ConnectorConfig(
+    name="Notion Knowledge Base",
+    auth_type=AuthType.TOKEN,
+    auth_config={"token": "secret_xxxxx"},  # Notion integration token
+    sync_config={
+        "sync_databases": True,
+        "sync_pages": True,
+        "include_archived": False,
+        "include_comments": True,
+        # Optional filters:
+        # "database_ids": ["db-uuid-1"],
+        # "page_ids": ["page-uuid-1"],
+    }
+)
+
+connector = NotionConnector(config, dataset)
+result = connector.sync()
+```
+
+### Slack Connector
+
+Import messages and threads from Slack workspaces.
+
+**Features:**
+- Import from specific channels or entire workspace
+- Preserve thread structure and replies
+- Include reactions and file attachments
+- Support for both public and private channels
+- User information and message metadata
+
+**Example:**
+```python
+from contextframe.connectors import SlackConnector, ConnectorConfig, AuthType
+
+config = ConnectorConfig(
+    name="Team Slack",
+    auth_type=AuthType.TOKEN,
+    auth_config={"token": "xoxb-your-bot-token"},
+    sync_config={
+        "channel_names": ["general", "engineering", "product"],
+        "include_threads": True,
+        "include_reactions": True,
+        "days_to_sync": 30,  # Last 30 days
+        "include_private": False,
+    }
+)
+
+connector = SlackConnector(config, dataset)
+result = connector.sync()
+```
+
+### Discord Connector
+
+Import messages and threads from Discord servers.
+
+**Features:**
+- Import from specific servers and channels
+- Support for threads and forum posts
+- Include reactions, embeds, and attachments
+- Handle message replies and relationships
+- Voice channel text support
+
+**Example:**
+```python
+from contextframe.connectors import DiscordConnector, ConnectorConfig, AuthType
+
+config = ConnectorConfig(
+    name="Discord Community",
+    auth_type=AuthType.TOKEN,
+    auth_config={"bot_token": "your-discord-bot-token"},
+    sync_config={
+        "guild_ids": [123456789],  # Server IDs
+        "channel_names": ["general", "development"],
+        "include_threads": True,
+        "include_forum_posts": True,
+        "days_to_sync": 14,
+    }
+)
+
+# Note: Discord connector requires async execution
+# See examples/all_connectors_usage.py for async usage
+```
+
+### Obsidian Connector
+
+Import notes and attachments from Obsidian vaults.
+
+**Features:**
+- Import markdown notes with full content
+- Extract and preserve frontmatter metadata
+- Parse and link wiki-style backlinks
+- Include attachments (images, PDFs, etc.)
+- Support for tags and folder structure
+
+**Example:**
+```python
+from contextframe.connectors import ObsidianConnector, ConnectorConfig, AuthType
+
+config = ConnectorConfig(
+    name="Personal Vault",
+    auth_type=AuthType.NONE,  # Local file access
+    sync_config={
+        "vault_path": "/path/to/obsidian/vault",
+        "include_attachments": True,
+        "include_daily_notes": True,
+        "folders_to_exclude": [".obsidian", ".trash"],
+        "extract_frontmatter": True,
+        "extract_tags": True,
+        "extract_backlinks": True,
+    }
+)
+
+connector = ObsidianConnector(config, dataset)
 result = connector.sync()
 ```
 

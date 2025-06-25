@@ -10,8 +10,13 @@ from contextframe.connectors.base import (
     SourceConnector,
     SyncResult,
 )
+from contextframe.connectors.discord import DiscordConnector
 from contextframe.connectors.github import GitHubConnector
+from contextframe.connectors.google_drive import GoogleDriveConnector
 from contextframe.connectors.linear import LinearConnector
+from contextframe.connectors.notion import NotionConnector
+from contextframe.connectors.obsidian import ObsidianConnector
+from contextframe.connectors.slack import SlackConnector
 
 __all__ = [
     "SourceConnector",
@@ -20,4 +25,9 @@ __all__ = [
     "AuthType",
     "GitHubConnector",
     "LinearConnector",
+    "GoogleDriveConnector",
+    "NotionConnector",
+    "SlackConnector",
+    "DiscordConnector",
+    "ObsidianConnector",
 ]
