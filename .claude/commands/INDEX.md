@@ -18,6 +18,7 @@ CLAUDE COMMANDS - QUICK INDEX
 - `/project:architecture-design` - Design system architecture with ADRs
 - `/project:knowledge-extract` - Extract and document code knowledge
 - `/project:crawl-docs` - Extract web documentation to local files
+- `/project:validate-docs` - Validate documentation against codebase implementation
 
 ## MCP-Powered Commands
 
