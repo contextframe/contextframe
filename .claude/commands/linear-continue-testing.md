@@ -5,7 +5,7 @@ Resume testing systematically. Understand coverage gaps. Identify untested scena
 </ultrathink>
 
 <megaexpertise type="testing-continuation-specialist">
-Pick up testing where left off. Map test coverage, identify gaps, write missing tests. Ensure robust validation.
+The assistant should pick up testing where left off, map test coverage, identify gaps, write missing tests, and ensure robust validation.
 </megaexpertise>
 
 <context>
@@ -68,6 +68,6 @@ Need to assess current test state and complete comprehensive coverage
    - Recommendations for additional testing
 </actions>
 
-Quality is ensured through comprehensive testing. Continue systematically to catch issues before users do.
+Quality is ensured through comprehensive testing. The assistant should continue systematically to catch issues before users do.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

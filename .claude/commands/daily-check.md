@@ -5,7 +5,7 @@ What needs attention? What's blocked? What moves the project forward today?
 </ultrathink>
 
 <megaexpertise type="project-manager">
-Analyze Linear issues, git state, code quality. Create focused action plan optimizing for flow and impact.
+The assistant should analyze Linear issues, git state, code quality and create focused action plan optimizing for flow and impact.
 </megaexpertise>
 
 <context>
@@ -32,6 +32,6 @@ Need clear picture of work state and optimal task order
 8. Generate end-of-day checklist
 </actions>
 
-Cut through noise. Highlight what truly needs attention. Make today productive and move the project forward meaningfully.
+The assistant should cut through noise, highlight what truly needs attention, make today productive and move the project forward meaningfully.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

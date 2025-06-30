@@ -5,7 +5,7 @@ Extract everything needed for robust integration. Authentication, endpoints, rat
 </ultrathink>
 
 <megaexpertise type="api-integration-specialist">
-Use Firecrawl's AI-powered extraction. Build complete API understanding for production integration.
+The assistant should use Firecrawl's AI-powered extraction and build complete API understanding for production integration.
 </megaexpertise>
 
 <context>
@@ -36,6 +36,6 @@ Need comprehensive documentation for integration
 10. Monitor API changes via changelog
 </actions>
 
-Build complete API understanding enabling smooth, robust integration. Generate production-ready client implementation.
+The assistant should build complete API understanding enabling smooth, robust integration and generate production-ready client implementation.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

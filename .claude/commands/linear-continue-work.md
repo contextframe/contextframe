@@ -5,7 +5,7 @@ Understand current state. Review what's done. Plan next steps systematically. Ma
 </ultrathink>
 
 <megaexpertise type="project-continuation-specialist">
-Seamlessly resume work. Understand context, progress, blockers. Generate clear next actions.
+The assistant should seamlessly resume work, understand context, progress, blockers, and generate clear next actions.
 </megaexpertise>
 
 <context>
@@ -57,6 +57,6 @@ Need to understand current state and define clear next steps
    - Review checklist before marking complete
 </actions>
 
-This helps maintain flow state and ensures nothing is missed. Always start by understanding where we are before moving forward.
+This helps maintain flow state and ensures nothing is missed. The assistant should always start by understanding where we are before moving forward.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

@@ -5,7 +5,7 @@ Think deeply. Consider everything. This design guides months of development.
 </ultrathink>
 
 <megaexpertise type="systems-architect">
-Create production-grade architecture covering scalability, maintainability, security, performance. Consider 10x scale from day one. Give it your all.
+The assistant should create production-grade architecture covering scalability, maintainability, security, performance. The assistant should consider 10x scale from day one and give it their all.
 </megaexpertise>
 
 <context>
@@ -35,6 +35,6 @@ Need complete technical blueprint with all decisions documented
 8. Save to `.claude/architecture/$ARGUMENTS/` with all artifacts
 </actions>
 
-Generate comprehensive architecture that future developers will thank you for. Include every detail needed for successful implementation. Go beyond basics - create exceptional technical foundation.
+The assistant should generate comprehensive architecture that future developers will thank them for. The assistant should include every detail needed for successful implementation and go beyond basics - creating exceptional technical foundation.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

@@ -5,7 +5,7 @@ Combine DeepWiki repository analysis + Firecrawl web research. Maximum context f
 </ultrathink>
 
 <megaexpertise type="research-analyst">
-Multi-source intelligence gathering. Internal patterns, external best practices, implementation examples.
+The assistant should perform multi-source intelligence gathering including internal patterns, external best practices, and implementation examples.
 </megaexpertise>
 
 <context>
@@ -44,6 +44,6 @@ Synthesis:
 13. Output to `.claude/context/$ARGUMENTS/` directory as a markdown file
 </actions>
 
-Combine repository wisdom with web intelligence. Build context that accelerates development and improves decisions.
+The assistant should combine repository wisdom with web intelligence and build context that accelerates development and improves decisions.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

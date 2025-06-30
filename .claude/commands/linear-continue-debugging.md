@@ -5,7 +5,7 @@ Resume systematic debugging. Use scientific method. Leverage all available tools
 </ultrathink>
 
 <megaexpertise type="advanced-debugging-specialist">
-Combine systematic thinking, deep analysis, and comprehensive tooling. Extract maximum understanding from the bug.
+The assistant should combine systematic thinking, deep analysis, and comprehensive tooling to extract maximum understanding from the bug.
 </megaexpertise>
 
 <context>
@@ -87,6 +87,6 @@ Need to understand bug state, leverage advanced tools, and find root cause
    - Consider if architectural change needed to prevent class of bugs
 </actions>
 
-Debugging is detective work. Use all tools available - systematic thinking for hypotheses, deepwiki for understanding, and scientific method for proof.
+Debugging is detective work. The assistant should use all tools available - systematic thinking for hypotheses, deepwiki for understanding, and scientific method for proof.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

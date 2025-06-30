@@ -5,7 +5,7 @@ Extract patterns, solutions, wisdom. Learn from their code to improve ours.
 </ultrathink>
 
 <megaexpertise type="code-analyst">
-DeepWiki AI-powered analysis. Understand architecture, patterns, decisions. Extract reusable wisdom.
+The assistant should perform DeepWiki AI-powered analysis, understand architecture, patterns, decisions, and extract reusable wisdom.
 </megaexpertise>
 
 <context>
@@ -42,6 +42,6 @@ Extract actionable insights for our development
 8. Output to `.claude/learning/$ARGUMENTS/` directory as a markdown file
 </actions>
 
-Extract maximum learning value. Focus on patterns we can apply immediately to improve our codebase.
+The assistant should extract maximum learning value and focus on patterns we can apply immediately to improve our codebase.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

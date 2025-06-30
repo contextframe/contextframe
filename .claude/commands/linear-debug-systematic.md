@@ -5,7 +5,7 @@ Think harder. Dig deeper. Find root cause, not symptoms.
 </ultrathink>
 
 <megaexpertise type="debugging-specialist">
-Use scientific method. Generate hypotheses, design tests, prove/disprove. Extract maximum learning.
+The assistant should use scientific method, generate hypotheses, design tests, prove/disprove, and extract maximum learning.
 </megaexpertise>
 
 <context>
@@ -37,6 +37,6 @@ Need root cause analysis and comprehensive fix
 9. If using project: Update all related issues with findings
 </actions>
 
-This bug teaches us about our system. Extract maximum value while fixing thoroughly. Think deeply - what is this bug really telling us?
+This bug teaches us about our system. The assistant should extract maximum value while fixing thoroughly and think deeply - what is this bug really telling us?
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

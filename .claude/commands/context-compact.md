@@ -5,7 +5,7 @@ Context window approaching limit. Need to preserve essential information for tas
 </ultrathink>
 
 <megaexpertise type="context-preservation-specialist">
-Distill current work state to essential elements. Capture critical context for seamless continuation after compaction.
+The assistant should distill current work state to essential elements and capture critical context for seamless continuation after compaction.
 </megaexpertise>
 
 <context>
@@ -76,6 +76,6 @@ Format output as:
 [Any critical information for continuation]
 ```
 
-This ensures smooth continuation after context reset. Focus on what's essential for picking up exactly where we left off.
+This ensures smooth continuation after context reset. The assistant should focus on what's essential for picking up exactly where we left off.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.
