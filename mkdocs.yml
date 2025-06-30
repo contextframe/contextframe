@@ -122,14 +122,41 @@ markdown_extensions:
   - pymdownx.tilde
 nav:
   - Home: 'index.md'
-  - Quick Start: 'quickstart.md'
-  - Specification:
+  - Getting Started:
+    - Quick Start: 'quickstart.md'
+    - Installation: 'getting-started/installation.md'
+    - First Steps: 'getting-started/first-steps.md'
+    - Basic Examples: 'getting-started/basic-examples.md'
 
   - Core Concepts:
+    - Architecture Overview: 'core-concepts/architecture.md'
+    - Data Model: 'core-concepts/data-model.md'
+    - Schema System: 'core-concepts/schema-system.md'
+    - Storage Layer: 'core-concepts/storage-layer.md'
+    - Collections & Relationships: 'core-concepts/collections-relationships.md'
+    - Record Types: 'core-concepts/record-types.md'
 
-  - Integration:
-    - Installation: 'integration/installation.md'
+  - Module Guides:
+    - FrameDataset: 'modules/frame-dataset.md'
+    - FrameRecord: 'modules/frame-record.md'
+    - Embeddings: 'modules/embeddings.md'
+    - Enrichment: 'modules/enrichment.md'
+    - Search & Query: 'modules/search-query.md'
+    - Import/Export: 'modules/import-export.md'
+
+  - Integration Guides:
+    - Overview: 'integration/overview.md'
     - Python API: 'integration/python_api.md'
+    - External Connectors:
+      - Introduction: 'integration/connectors/introduction.md'
+      - GitHub: 'integration/connectors/github.md'
+      - Linear: 'integration/connectors/linear.md'
+      - Google Drive: 'integration/connectors/google-drive.md'
+      - Notion: 'integration/connectors/notion.md'
+      - Slack: 'integration/connectors/slack.md'
+      - Discord: 'integration/connectors/discord.md'
+      - Obsidian: 'integration/connectors/obsidian.md'
+      - Building Custom Connectors: 'integration/connectors/custom.md'
     - Object Storage: 'integration/object_storage.md'
     - Blobs: 'integration/blobs.md'
 
@@ -159,29 +186,59 @@ nav:
       - Error Codes: 'mcp/reference/errors.md'
       - FAQ: 'mcp/reference/faq.md'
 
+  - API Reference:
+    - Overview: 'api/overview.md'
+    - FrameDataset: 'api/frame-dataset.md'
+    - FrameRecord: 'api/frame-record.md'
+    - Connectors: 'api/connectors.md'
+    - Schema: 'api/schema.md'
+    - Utilities: 'api/utilities.md'
+
+  - Cookbook:
+    - Overview: 'cookbook/index.md'
+    - Building a RAG System: 'cookbook/rag-system.md'
+    - Document Processing Pipeline: 'cookbook/document-pipeline.md'
+    - Multi-Source Search: 'cookbook/multi-source-search.md'
+    - GitHub Knowledge Base: 'cookbook/github-knowledge-base.md'
+    - Research Paper Collection: 'cookbook/research-papers.md'
+    - Customer Support Analytics: 'cookbook/support-analytics.md'
+    - Meeting Notes Organization: 'cookbook/meeting-notes.md'
+    - API Documentation Management: 'cookbook/api-docs.md'
+    - Slack Community Knowledge: 'cookbook/slack-knowledge.md'
+    - Financial Report Analysis: 'cookbook/financial-analysis.md'
+    - Email Archive Search: 'cookbook/email-archive.md'
+    - Multi-Language Documentation: 'cookbook/multi-language.md'
+    - Video Transcript Database: 'cookbook/video-transcripts.md'
+    - Scientific Data Catalog: 'cookbook/scientific-catalog.md'
+    - Legal Document Repository: 'cookbook/legal-repository.md'
+    - Course Material Management: 'cookbook/course-materials.md'
+    - News Article Clustering: 'cookbook/news-clustering.md'
+    - Patent Search System: 'cookbook/patent-search.md'
+    - Podcast Episode Index: 'cookbook/podcast-index.md'
+    - Product Changelog Tracking: 'cookbook/changelog-tracking.md'
+
   - CLI Reference:
+    - Overview: 'cli/overview.md'
+    - Commands: 'cli/commands.md'
+    - Configuration: 'cli/configuration.md'
+
+  - Migration Guides:
+    - Overview: 'migration/overview.md'
+    - From Vector Databases: 'migration/from-vector-databases.md'
+    - From Document Stores: 'migration/from-document-stores.md'
+    - Data Import/Export: 'migration/data-import-export.md'
 
   - Community:
+    - Contributing: 'community/contributing.md'
+    - Code of Conduct: 'community/code-of-conduct.md'
+    - Support: 'community/support.md'
 
-  - User Guide:
-    - Basics Tutorial: 'tutorials/basics_tutorial.md'
-    - FastAPI Vector Search: 'recipes/fastapi_vector_search.md'
-    - Bulk Ingest & Embedding: 'recipes/bulk_ingest_embedding.md'
-    - Store Images as Blobs: 'recipes/store_images_blobs.md'
-    - S3 Round-Trip: 'recipes/s3_roundtrip.md'
-    - Collections & Relationships: 'recipes/collections_relationships.md'
-    - FrameSet Export/Import: 'recipes/frameset_export_import.md'
-    - Schema Cheatsheet: 'concepts/schema_cheatsheet.md'
+  - Reference:
     - FAQ: 'faq.md'
     - Troubleshooting: 'troubleshooting.md'
-
-  - Examples:
-
-  - API Reference:
-
-  - CLI Reference:
-
-  - Support:
+    - Schema Reference: 'reference/schema.md'
+    - Error Codes: 'reference/errors.md'
+    - Glossary: 'reference/glossary.md'
 
 
 plugins:
