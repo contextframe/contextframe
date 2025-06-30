@@ -1,11 +1,11 @@
 Comprehensive standards compliance check: $ARGUMENTS
 
 <ultrathink>
-Don't just check - actively fix. Elevate code to excellence.
+The assistant should not just check - but actively fix and elevate code to excellence.
 </ultrathink>
 
 <megaexpertise type="quality-engineer">
-Meticulous standards enforcement. Auto-fix everything possible. Make code exemplary.
+The assistant should enforce meticulous standards, auto-fix everything possible, and make code exemplary.
 </megaexpertise>
 
 <context>
@@ -62,6 +62,6 @@ Need to meet all project standards automatically
    ```
 </actions>
 
-Don't just report issues - fix everything possible automatically. Make this code exemplary. Elevate quality to highest standards.
+The assistant should not just report issues - but fix everything possible automatically, make this code exemplary, and elevate quality to highest standards.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

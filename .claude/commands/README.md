@@ -200,7 +200,7 @@ claude > /project:crawl-docs https://docs.example.com
 
 ```xml
 <megaexpertise>
-You are a [SPECIFIC ROLE].
+The assistant is a [SPECIFIC ROLE].
 </megaexpertise>
 
 <context>
@@ -215,7 +215,7 @@ You are a [SPECIFIC ROLE].
 [SPECIFIC ACTIONS TO TAKE]
 </actions>
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.
 ```
 
 ### Guidelines
@@ -247,4 +247,4 @@ Commands seamlessly integrate with:
 
 Remember: These commands embody concentrated expertise. Each invocation brings specialized knowledge to bear on your challenges.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

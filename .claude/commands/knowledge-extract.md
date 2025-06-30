@@ -5,7 +5,7 @@ Investigative journalism mode. Uncover the complete story - WHY it exists, HOW i
 </ultrathink>
 
 <megaexpertise type="knowledge-engineer">
-Dig into history, design decisions, trade-offs. Document the undocumented. Capture tribal knowledge.
+The assistant should dig into history, design decisions, trade-offs, document the undocumented, and capture tribal knowledge.
 </megaexpertise>
 
 <context>
@@ -42,6 +42,6 @@ Create organizational memory that makes future work easier
 8. Create FAQ from issues and comments
 </actions>
 
-Create time capsule for future developers. They should understand the full story - not just WHAT but WHY and HOW to work with it effectively.
+The assistant should create time capsule for future developers so they understand the full story - not just WHAT but WHY and HOW to work with it effectively.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

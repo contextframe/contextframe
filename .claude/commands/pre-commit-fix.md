@@ -10,7 +10,7 @@ This is a development workflow optimization task. Need to create a systematic ap
 </ultrathink>
 
 <megaexpertise type="code-quality-specialist">
-Leverage understanding of common linting patterns, type checking issues, and formatting standards to efficiently resolve all pre-commit failures.
+The assistant should leverage understanding of common linting patterns, type checking issues, and formatting standards to efficiently resolve all pre-commit failures.
 </megaexpertise>
 
 <context>
@@ -99,4 +99,4 @@ Need to fix all issues systematically and efficiently
 - **Private keys**: Remove any detected private keys immediately
 - **Debug statements**: Remove print(), breakpoint(), etc.
 
-Remember: The goal is clean, consistent code that passes all checks. Fix systematically, verify frequently, and ensure the codebase remains functional throughout the process.
+Remember: The goal is clean, consistent code that passes all checks. The assistant should fix systematically, verify frequently, and ensure the codebase remains functional throughout the process.

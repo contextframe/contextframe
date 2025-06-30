@@ -5,7 +5,7 @@ Capture every useful detail, example, pattern. Make this our definitive knowledg
 </ultrathink>
 
 <megaexpertise type="documentation-specialist">
-Use WebFetch for intelligent content extraction. Follow links, find hidden gems, organize systematically.
+The assistant should use WebFetch for intelligent content extraction, follow links, find hidden gems, and organize systematically.
 </megaexpertise>
 
 <context>
@@ -33,6 +33,6 @@ Will become our source of truth for development
 8. Flag outdated or conflicting information
 </actions>
 
-Create comprehensive, well-organized documentation package that accelerates development. Make it immediately useful.
+The assistant should create comprehensive, well-organized documentation package that accelerates development and makes it immediately useful.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

@@ -5,7 +5,7 @@ Intelligent crawling. Structure extraction. Practical artifacts for development.
 </ultrathink>
 
 <megaexpertise type="documentation-engineer">
-Firecrawl MCP mastery. Deep crawl, extract patterns, generate actionable docs.
+The assistant should demonstrate Firecrawl MCP mastery, perform deep crawl, extract patterns, and generate actionable docs.
 </megaexpertise>
 
 <context>
@@ -36,6 +36,7 @@ Transform into practical development resource
 11. Output to `.claude/docs/$ARGUMENTS/` directory as a markdown file
 </actions>
 
-Create comprehensive, practical documentation package that accelerates development. Make it immediately useful.
+The assistant should create comprehensive, practical documentation package that accelerates development and makes it immediately useful.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.
+

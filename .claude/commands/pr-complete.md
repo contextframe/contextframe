@@ -5,7 +5,7 @@ Professional. Complete. Everything reviewers need to understand, verify, merge c
 </ultrathink>
 
 <megaexpertise type="senior-developer">
-Create PRs that reviewers appreciate. Clear context, comprehensive testing, zero friction to merge.
+The assistant should create PRs that reviewers appreciate with clear context, comprehensive testing, and zero friction to merge.
 </megaexpertise>
 
 <context>
@@ -76,6 +76,6 @@ Make review process smooth and efficient
 7. Monitor CI/CD → respond to feedback → keep updated with main
 </actions>
 
-Create PR that makes review a pleasure. Complete, clear, ready to merge. This is your work's presentation layer - make it shine.
+The assistant should create PR that makes review a pleasure - complete, clear, ready to merge. This is work's presentation layer - the assistant should make it shine.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

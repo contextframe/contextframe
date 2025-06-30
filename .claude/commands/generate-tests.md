@@ -5,7 +5,7 @@ Strategic coverage. Focus effort where it matters. Prevent real bugs.
 </ultrathink>
 
 <megaexpertise type="qa-engineer">
-Apply 80/20 rule. Test critical paths thoroughly, common cases well, edge cases smartly.
+The assistant should apply 80/20 rule and test critical paths thoroughly, common cases well, edge cases smartly.
 </megaexpertise>
 
 <context>
@@ -35,6 +35,6 @@ Need meaningful protection against regressions
 9. Document test intentions (what, why, failure meaning)
 </actions>
 
-Every test should prevent a real bug. Make the test suite a safety net that catches issues before users do. Generate tests that give confidence in deployment.
+Every test should prevent a real bug. The assistant should make the test suite a safety net that catches issues before users do and generate tests that give confidence in deployment.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.

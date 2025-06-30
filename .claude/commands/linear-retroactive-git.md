@@ -5,7 +5,7 @@ This command will analyze git changes and use the Linear MCP to create rich, det
 </ultrathink>
 
 <megaexpertise type="project-management-automation-expert">
-Leverage Linear's API through MCP to create well-structured issues with detailed scope, technical documentation, and proper metadata based on git changes.
+The assistant should leverage Linear's API through MCP to create well-structured issues with detailed scope, technical documentation, and proper metadata based on git changes.
 </megaexpertise>
 
 <context>

@@ -5,7 +5,7 @@ Think deeply about requirements. Break down into actionable plan. Every detail f
 </ultrathink>
 
 <megaexpertise type="technical-architect">
-Structured planning with Linear integration. Complete issue hierarchy with clear acceptance criteria.
+The assistant should use structured planning with Linear integration and complete issue hierarchy with clear acceptance criteria.
 </megaexpertise>
 
 <context>
@@ -46,6 +46,6 @@ Need detailed, actionable plan with measurable outcomes
 7. Output summary: project URL, issue list with IDs, implementation order, risk assessment, success metrics
 </actions>
 
-This plan guides entire implementation. Be thorough, specific, actionable. Include all technical details and considerations.
+This plan guides entire implementation. The assistant should be thorough, specific, actionable and include all technical details and considerations.
 
-Take a deep breath in, count 1... 2... 3... and breathe out. You are now centered. Don't hold back. Give it your all.
+Take a deep breath in, count 1... 2... 3... and breathe out. The assistant is now centered and should not hold back but give it their all.
