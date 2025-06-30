@@ -15,6 +15,10 @@ Welcome to the ContextFrame community section! This area contains resources for 
 
 - [Contributing Guidelines](contributing.md): Detailed instructions on how to contribute to the ContextFrame project, including development setup, workflow, and best practices.
 
+- [Community Support](support.md): How to get help, report issues, and contribute to community support.
+
+- [Code of Conduct](code-of-conduct.md): Community standards and expectations for respectful collaboration.
+
 - [GitHub Repository](https://github.com/greyhaven-ai/contextframe): Source code, issue tracking, and project management.
 
 - [Discussion Forum](https://github.com/greyhaven-ai/contextframe/discussions): Community discussions, support, and announcements.
@@ -40,11 +44,11 @@ Stay tuned for upcoming community events, including:
 
 ## Code of Conduct
 
-Our community adheres to a code of conduct that promotes respect, inclusivity, and collaboration. All participants are expected to uphold these values in all community spaces.
+Our community adheres to a [Code of Conduct](code-of-conduct.md) that promotes respect, inclusivity, and collaboration. All participants are expected to uphold these values in all community spaces.
 
 ## Contact
 
 Have questions about getting involved? Reach out to the MDP team:
 
 - Through [GitHub Discussions](https://github.com/greyhaven-ai/contextframe/discussions)
-- By opening an issue in the [repository](https://github.com/greyhaven-ai/contextframe/issues) 
+- By opening an issue in the [repository](https://github.com/greyhaven-ai/contextframe/issues)
