@@ -158,7 +158,9 @@ provider = LiteLLMProvider(
 
 ### Text Embeddings Inference (TEI)
 
-For high-performance, self-hosted embeddings, ContextFrame now supports Hugging Face's Text Embeddings Inference (TEI) server directly:
+For high-performance, self-hosted embeddings, ContextFrame now supports Hugging Face's Text Embeddings Inference (TEI) server directly.
+
+**⚠️ Important**: TEI requires separate server deployment. See the [TEI Setup Guide](./tei_setup_guide.md) for detailed installation instructions including hardware requirements, Docker setup, and troubleshooting.
 
 ```python
 from contextframe.embed import TEIProvider, create_embedder
