@@ -22,7 +22,7 @@ ContextFrame addresses these challenges by leveraging the `.lance` format's stre
         -   **Creation (`.create`)**: Initializes a new `.lance` directory with the correct ContextFrame schema (using `lance.write_dataset`).
         -   **Opening (`.open`)**: Loads an existing ContextFrame dataset (using `lance.dataset`).
         -   **Adding Records (`.add`, `.add_many`)**: Validates `FrameRecord` metadata against the schema and inserts the data into the Lance dataset (using `LanceDataset.insert`).
-        -   **Retrieval (`.from_dataset_row`)**: Fetches a specific record by UUID (using `LanceDataset.scanner` with a filter).
+        -   **Retrieval (`.get_by_uuid`)**: Fetches a specific record by UUID (using `LanceDataset.scanner` with a filter).
         -   **Vector & Text Search Helpers**
             -   `knn_search(...)` – convenient nearest-neighbour search that returns fully-materialised `FrameRecord` objects and supports additional SQL filters.
             -   `full_text_search(...)` – wraps Lance BM25 full-text search for one-liner relevance queries.
@@ -58,8 +58,10 @@ While ContextFrame defines fields to track document source and relationships, th
 ### Core Package (Minimal)
 ```bash
 # Core functionality only - fast, lightweight install
-pip install contextframe
+pip install contextframe==0.1.2
 ```
+
+**Important**: Use version 0.1.2 or later for correct dependencies (pylance).
 
 ### With Optional Features
 ```bash

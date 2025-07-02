@@ -156,7 +156,8 @@
               "child",
               "related",
               "reference",
-              "contains"
+              "contains",
+              "member_of"
             ]
           },
           "id": {

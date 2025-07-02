@@ -28,16 +28,16 @@ The `FrameDataset` class is the primary interface for working with ContextFrame 
 ```python
 from contextframe import FrameDataset
 
-# Create a new dataset
-dataset = FrameDataset.create("documents.lance")
+# Create a new dataset with embedding dimension
+dataset = FrameDataset.create("documents.lance", embed_dim=1536)
 
 # Open an existing dataset
-dataset = FrameDataset("documents.lance")
+dataset = FrameDataset.open("documents.lance")
 
-# Create with custom schema
+# Create with specific embedding dimension
 dataset = FrameDataset.create(
     "custom.lance",
-    schema=my_schema  # Arrow schema
+    embed_dim=1536  # Must specify embedding dimension
 )
 ```
 
@@ -46,22 +46,28 @@ dataset = FrameDataset.create(
 ```python
 from contextframe import FrameRecord, create_metadata
 
-# Single record
-record = FrameRecord(
-    text_content="Content here",
-    metadata=create_metadata(title="Doc 1")
+# Single record using create factory
+record = FrameRecord.create(
+    title="Doc 1",
+    content="Content here"
 )
 dataset.add(record)
 
-# Batch add
+# Batch add using add_many
 records = [
-    FrameRecord(text_content=f"Doc {i}") 
+    FrameRecord.create(title=f"Doc {i}", content=f"Content {i}") 
     for i in range(100)
 ]
-dataset.add_batch(records)
+dataset.add_many(records)
 
-# With embeddings
-dataset.add(record, generate_embedding=True)
+# With pre-computed embeddings
+import numpy as np
+record_with_vector = FrameRecord.create(
+    title="Doc with Embedding",
+    content="Content",
+    vector=np.random.rand(1536).astype(np.float32)
+)
+dataset.add(record_with_vector)
 ```
 
 ### Searching and Filtering
@@ -117,15 +123,18 @@ similar = dataset.find_similar(
 print(f"Total records: {len(dataset)}")
 print(f"Schema: {dataset.schema}")
 
-# Update records
-dataset.update(
-    record_id="doc_123",
-    metadata={"status": "reviewed"}
-)
+# Retrieve by UUID
+record = dataset.get_by_uuid("doc_123")
 
-# Delete records
-dataset.delete("doc_123")
-dataset.delete_many(["doc_1", "doc_2", "doc_3"])
+# Update records
+record.metadata['status'] = 'reviewed'
+dataset.update_record(record)
+
+# Delete records by UUID
+dataset.delete_record("doc_123")
+
+# Upsert (insert or update)
+dataset.upsert_record(record)
 
 # Create index for performance
 dataset.create_index(

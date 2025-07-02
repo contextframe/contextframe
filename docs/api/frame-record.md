@@ -29,45 +29,39 @@ The `FrameRecord` class represents an individual document in ContextFrame. It en
 from contextframe import FrameRecord, create_metadata, RecordType
 from datetime import datetime
 
-# Basic record
-record = FrameRecord(
-    text_content="This is the document content",
-    metadata=create_metadata(
-        title="My Document",
-        source="manual",
-        author="John Doe"
-    )
+# Basic record using create() factory method
+record = FrameRecord.create(
+    title="My Document",
+    content="This is the document content",  # Maps to text_content
+    author="John Doe",
+    source_type="manual"
 )
 
 # Full record with all fields
-record = FrameRecord(
-    text_content="Document content here",
-    metadata={
-        "title": "Technical Report",
-        "source": "research",
-        "created_at": "2024-01-15T10:30:00Z",
-        "custom_field": "custom_value"
+record = FrameRecord.create(
+    title="Technical Report",
+    content="Document content here",
+    author="Research Team",
+    tags=["research", "technical"],
+    status="published",  # Stored in metadata
+    source_type="research",
+    context="This document covers important research findings",
+    custom_metadata={
+        "project_id": "2024_001",  # All values must be strings
+        "priority": "high"
     },
-    record_type=RecordType.DOCUMENT,
-    unique_id="report_2024_001",
-    timestamp=datetime.now().isoformat(),
-    vector=[0.1, 0.2, 0.3, ...],  # 1536-dim embedding
-    context={
-        "section": "Introduction",
-        "page_number": 1
-    },
-    raw_data=b"Binary content if needed"
+    vector=np.random.rand(1536).astype(np.float32),  # 1536-dim embedding
+    raw_data=b"Binary content if needed",
+    raw_data_type="application/pdf"
 )
 
 # Collection header record
-header = FrameRecord(
-    text_content="Collection of research papers",
-    metadata=create_metadata(
-        title="ML Research Collection",
-        description="Papers on machine learning"
-    ),
+header = FrameRecord.create(
+    title="ML Research Collection",
+    content="Collection of research papers on machine learning",
     record_type=RecordType.COLLECTION_HEADER,
-    unique_id="collection_ml_research"
+    collection="ml_research",
+    tags=["machine-learning", "research", "collection"]
 )
 ```
 

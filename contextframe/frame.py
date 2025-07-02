@@ -26,6 +26,7 @@ except ModuleNotFoundError as exc:
         "lance is required for contextframe.frame. Please install contextframe with the 'lance' extra."
     ) from exc
 
+from .exceptions import ValidationError
 from .helpers.metadata_utils import add_relationship_to_metadata, create_relationship
 from .schema import get_schema
 from .schema.contextframe_schema import DEFAULT_EMBED_DIM
@@ -292,6 +293,7 @@ class FrameRecord:
         vector: np.ndarray | None = None,
         raw_data: bytes | None = None,
         raw_data_type: str | None = None,
+        uuid: str | None = None,
         **metadata: Any,
     ) -> FrameRecord:
         """Create a new FrameRecord with common metadata fields.
@@ -316,6 +318,9 @@ class FrameRecord:
             Optional raw binary content (e.g., image bytes).
         raw_data_type:
             Optional MIME type for raw_data (required if raw_data is provided).
+        uuid:
+            Optional UUID for the record. If not provided, a new UUID will be
+            generated automatically. Useful for testing or migration scenarios.
         **metadata:
             Additional key/value pairs to store in the document metadata.
             The 'title', 'raw_data', and 'raw_data_type' if passed through here
@@ -330,6 +335,10 @@ class FrameRecord:
         # which will be passed to the constructor.
         current_metadata = metadata.copy()  # Work with a copy
         current_metadata["title"] = title
+        
+        # Add UUID if provided
+        if uuid is not None:
+            current_metadata["uuid"] = uuid
 
         # The raw_data and raw_data_type are passed directly to the constructor,
         # not through the metadata dict for the constructor.
@@ -723,7 +732,7 @@ class FrameDataset:
         """Append a single FrameRecord to the dataset."""
         ok, errs = validate_metadata_with_schema(record.metadata)
         if not ok:
-            raise ValueError(f"Invalid metadata: {errs}")
+            raise ValidationError("Invalid metadata", errors=errs)
 
         # Ensure record_type defaults to 'document' if not provided
         record.metadata.setdefault("record_type", "document")
@@ -753,7 +762,9 @@ class FrameDataset:
         for rec in records:
             ok, errs = validate_metadata_with_schema(rec.metadata)
             if not ok:
-                raise ValueError(f"Invalid metadata in record {rec.uuid}: {errs}")
+                # Add context about which record failed
+                error_msg = f"Invalid metadata in record '{rec.title}' (UUID: {rec.uuid})"
+                raise ValidationError(error_msg, errors=errs)
             tbls.append(rec.to_table())
         if not tbls:
             return
@@ -809,7 +820,8 @@ class FrameDataset:
         # the dataset.
         ok, errs = validate_metadata_with_schema(record.metadata)
         if not ok:
-            raise ValueError(f"Invalid metadata: {errs}")
+            error_msg = f"Cannot update record '{record.title}' (UUID: {record.uuid})"
+            raise ValidationError(error_msg, errors=errs)
 
         # Remove the existing record and sanity-check the outcome.
         delete_count = self.delete_record(record.uuid)
@@ -847,7 +859,8 @@ class FrameDataset:
         """
         ok, errs = validate_metadata_with_schema(record.metadata)
         if not ok:
-            raise ValueError(f"Invalid metadata: {errs}")
+            error_msg = f"Cannot upsert record '{record.title}' (UUID: {record.uuid})"
+            raise ValidationError(error_msg, errors=errs)
 
         # Attempt to remove any existing row(s).  We intentionally ignore the
         # returned count here because *upsert* semantics do not care whether
@@ -1811,11 +1824,31 @@ class FrameDataset:
         **extra_scan,
     ) -> pa.Table:
         """Internal helper returning a pyarrow Table with *k* nearest neighbours."""
-        nearest_cfg = {"column": "vector", "q": query_vector, "k": k}
-        if filter is None:
-            return self._dataset.to_table(nearest=nearest_cfg, **extra_scan)
-        # Use scanner so we can combine nearest + filter push-down when provided.
-        return self.scanner(nearest=nearest_cfg, filter=filter, **extra_scan).to_table()
+        # Workaround for Lance v0.30.0 bug: "Task was aborted" error
+        # See: https://github.com/lancedb/lance/issues/2464
+        # This occurs due to a Rust panic in Lance's vector search on small datasets
+        try:
+            nearest_cfg = {"column": "vector", "q": query_vector, "k": k}
+            if filter is None:
+                return self._dataset.to_table(nearest=nearest_cfg, **extra_scan)
+            # Use scanner so we can combine nearest + filter push-down when provided.
+            return self.scanner(nearest=nearest_cfg, filter=filter, **extra_scan).to_table()
+            
+        except Exception as e:
+            # Catch the Lance "Task was aborted" error specifically
+            error_str = str(e)
+            if "Task was aborted" in error_str or "range end index" in error_str:
+                import warnings
+                warnings.warn(
+                    f"Lance v0.30.0 vector search bug encountered: {error_str}. "
+                    "This is a known issue with small datasets. Returning empty results.",
+                    RuntimeWarning,
+                    stacklevel=3
+                )
+                return self._dataset.to_table(limit=0)
+            else:
+                # Re-raise other unexpected errors
+                raise
 
     def knn_search(
         self,
@@ -1849,7 +1882,7 @@ class FrameDataset:
         ]
 
     def full_text_search(
-        self, query: str, *, columns: list[str] | None = None, k: int = 100
+        self, query: str, *, columns: list[str] | None = None, k: int = 100, auto_index: bool = False
     ) -> list[FrameRecord]:
         """Run a BM25 full-text search.
 
@@ -1861,7 +1894,30 @@ class FrameDataset:
             List of columns to search.  Defaults to ["text_content"].
         k:
             Maximum number of rows to return.
+        auto_index:
+            If True, automatically create an inverted index if one doesn't exist.
+            This may take time on large datasets. Default is False.
+            
+        Notes
+        -----
+        This method requires an inverted index on the search column(s).
+        Use `create_fts_index()` to create the index before searching,
+        or set auto_index=True to create it automatically.
         """
+        # Auto-create index if requested
+        if auto_index:
+            try:
+                # Try the search first to see if index exists
+                ftq = {"query": query, "columns": columns or ["text_content"]}
+                tbl = self.scanner(full_text_query=ftq, limit=1).to_table()
+            except Exception as e:
+                # If error mentions missing index, create it
+                error_msg = str(e).lower()
+                if "no inverted index" in error_msg or "inverted index" in error_msg:
+                    # Create index on the first column
+                    column = (columns or ["text_content"])[0]
+                    self.create_fts_index(column)
+        
         ftq = {"query": query, "columns": columns or ["text_content"]}
         tbl = self.scanner(full_text_query=ftq, limit=k).to_table()
         return [
@@ -1870,6 +1926,28 @@ class FrameDataset:
             )
             for i in range(tbl.num_rows)
         ]
+        
+    def create_fts_index(self, column: str = "text_content", *, replace: bool = True, **kwargs) -> None:
+        """Create a full-text search index on the specified column.
+        
+        This is a convenience method that creates an inverted index
+        optimized for full-text search using BM25 ranking.
+        
+        Parameters
+        ----------
+        column:
+            The column to index. Defaults to "text_content".
+        replace:
+            Whether to replace an existing index on the column.
+        **kwargs:
+            Additional options such as tokenizer configuration.
+            
+        Example
+        -------
+        >>> dataset.create_fts_index()
+        >>> results = dataset.full_text_search("machine learning")
+        """
+        self.create_scalar_index(column, index_type="INVERTED", replace=replace, **kwargs)
 
     # ------------------------------------------------------------------
     # Generic scanner / streaming utilities
@@ -1946,11 +2024,26 @@ class FrameDataset:
         # Delegate to Lance
         self._native.create_index("vector", **params)
 
-    def create_scalar_index(self, column: str, *, replace: bool = True) -> None:
-        """Create a bitmap index on *column* to accelerate predicate filtering.
+    def create_scalar_index(self, column: str, *, index_type: str = "BITMAP", replace: bool = True, **kwargs) -> None:
+        """Create a scalar index on *column* to accelerate predicate filtering.
 
         The helper validates that *column* exists and is a *scalar* type (not a
         list, struct, map, or the fixed-size list used for vectors).
+        
+        Parameters
+        ----------
+        column:
+            The column to index.
+        index_type:
+            The type of index to create. Options include:
+            - "BITMAP": Default bitmap index for filtering
+            - "BTREE": B-tree index for range queries
+            - "INVERTED": Inverted index for full-text search
+            - "FTS": Full-text search index (alias for INVERTED)
+        replace:
+            Whether to replace an existing index on the column.
+        **kwargs:
+            Additional options passed to Lance (e.g., tokenizer settings).
         """
         # Validate column existence
         field = self._dataset.schema.get_field_index(column)
@@ -1970,7 +2063,7 @@ class FrameDataset:
                 f"Column {column!r} has non-scalar type {arrow_type} – cannot build scalar index."
             )
         # Delegate to Lance
-        self._native.create_scalar_index(column, replace=replace)
+        self._dataset.create_scalar_index(column, index_type=index_type, replace=replace, **kwargs)
 
     def enhance(
         self,

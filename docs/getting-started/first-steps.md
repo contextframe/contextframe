@@ -9,9 +9,9 @@ ContextFrame stores documents in datasets, which are Lance-format directories on
 ```python
 from contextframe import FrameDataset, FrameRecord
 
-# Create a new dataset
-dataset = FrameDataset.create("my_first_dataset.lance")
-print(f"Created dataset at: {dataset.uri}")
+# Create a new dataset with embedding dimension
+dataset = FrameDataset.create("my_first_dataset.lance", embed_dim=1536)
+print(f"Created dataset at: {dataset._native.uri}")
 ```
 
 !!! info "Dataset Location"

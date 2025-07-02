@@ -108,7 +108,7 @@ class TestExtractionToFrameDataset:
         dataset.add(frame)
 
         # Verify the frame was added by checking dataset stats
-        assert len(dataset._dataset) == 1
+        assert dataset._dataset.count_rows() == 1
 
         # Verify we can query the dataset
         results = dataset.scanner().to_table()
@@ -161,7 +161,7 @@ This is the readme file.""")
         dataset.add_many(frames)
 
         # Verify
-        assert len(dataset._dataset) == 4
+        assert dataset._dataset.count_rows() == 4
 
         # Query and verify content types
         results = dataset.scanner().to_table()
@@ -226,7 +226,7 @@ This is the readme file.""")
         dataset.add_many(frames)
 
         # Verify
-        num_chunks = len(dataset._dataset)
+        num_chunks = dataset._dataset.count_rows()
         assert num_chunks > 1  # Should have multiple chunks
 
         # Check chunk metadata directly from table
@@ -352,6 +352,6 @@ class TestExtractionErrorHandling:
             dataset.add_many(frames)
 
         # Verify
-        assert len(dataset._dataset) == 1  # Only valid file
+        assert dataset._dataset.count_rows() == 1  # Only valid file
         assert len(errors) == 1  # One failed extraction
         assert "does not exist" in errors[0].error
