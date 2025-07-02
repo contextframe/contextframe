@@ -156,6 +156,105 @@ provider = LiteLLMProvider(
 )
 ```
 
+### Text Embeddings Inference (TEI)
+
+For high-performance, self-hosted embeddings, ContextFrame now supports Hugging Face's Text Embeddings Inference (TEI) server directly:
+
+```python
+from contextframe.embed import TEIProvider, create_embedder
+
+# Using local TEI server
+provider = TEIProvider(
+    model="BAAI/bge-large-en-v1.5",  # Model name for identification
+    api_base="http://localhost:8080"  # Your TEI server URL
+)
+
+# Or use the factory function
+embedder = create_embedder(
+    model="BAAI/bge-large-en-v1.5",
+    provider_type="tei",  # Specify TEI provider
+    api_base="http://localhost:8080"
+)
+
+# With authentication (for secured TEI instances)
+provider = TEIProvider(
+    model="BAAI/bge-large-en-v1.5",
+    api_base="https://my-tei-server.com",
+    api_key="your-bearer-token"  # Bearer token for auth
+)
+
+# Embed documents
+texts = ["Document 1", "Document 2", "Document 3"]
+result = embedder.embed_batch(texts)
+```
+
+#### Setting up TEI
+
+1. **Using Docker (Recommended)**:
+```bash
+# For GPU deployment
+docker run --gpus all -p 8080:80 -v $PWD/data:/data \
+  ghcr.io/huggingface/text-embeddings-inference:1.7 \
+  --model-id BAAI/bge-large-en-v1.5
+
+# For CPU deployment
+docker run -p 8080:80 -v $PWD/data:/data \
+  ghcr.io/huggingface/text-embeddings-inference:cpu-1.7 \
+  --model-id BAAI/bge-large-en-v1.5
+```
+
+2. **Using Docker Compose**:
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  tei:
+    image: ghcr.io/huggingface/text-embeddings-inference:1.7
+    ports:
+      - "8080:80"
+    volumes:
+      - ./models:/data
+    command: --model-id BAAI/bge-base-en-v1.5
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+```
+
+#### TEI Advantages
+
+1. **Performance**: Optimized with Flash Attention, ONNX, and dynamic batching
+2. **Any Model**: Supports 100+ open-source models from Hugging Face
+3. **Self-Hosted**: Complete control over your data
+4. **Production Ready**: Built-in monitoring, metrics, and health checks
+5. **Hardware Acceleration**: GPU support with CUDA, CPU optimizations
+
+#### Configuration Options
+
+```python
+# Advanced TEI configuration
+provider = TEIProvider(
+    model="BAAI/bge-large-en-v1.5",
+    api_base="http://localhost:8080",
+    timeout=60.0,          # Request timeout in seconds
+    max_retries=3,         # Retry failed requests
+    truncate=True,         # Auto-truncate long inputs
+    normalize=True,        # L2 normalize embeddings
+)
+
+# Check server health
+health = provider.health_check()
+print(f"TEI Server Status: {health['status']}")
+
+# Get model information
+info = provider.get_model_info()
+print(f"Model: {info['model']}")
+print(f"Dimension: {info['dimension']}")
+```
+
 ### AWS Bedrock
 
 ```python
@@ -269,6 +368,8 @@ def smart_embed(frames):
 | OpenAI | text-embedding-3-small | 1536 | $0.02 | General use, best value |
 | OpenAI | text-embedding-3-large | 3072 | $0.13 | Highest quality |
 | Cohere | embed-english-light-v3.0 | 384 | $0.02 | Budget option |
+| TEI | BAAI/bge-large-en-v1.5 | 1024 | Free (self-hosted) | High performance, privacy |
+| TEI | BAAI/bge-base-en-v1.5 | 768 | Free (self-hosted) | Fast, balanced quality |
 | Ollama | nomic-embed-text | 768 | Free | Local deployment |
 
 ### 2. Implement Caching

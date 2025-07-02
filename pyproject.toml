@@ -88,6 +88,7 @@ embed = [
     "openai>=1.0.0",
     "anthropic>=0.21.0",
     "cohere>=4.0.0",
+    "httpx>=0.25.0",  # For TEI provider
 ]
 enhance = [
     "openai>=1.0.0",

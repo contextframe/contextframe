@@ -186,7 +186,7 @@ def create_embedder(
 
     Args:
         model: Encoding model to use
-        provider_type: Type of provider (currently only "litellm")
+        provider_type: Type of provider ("litellm" or "tei")
         batch_size: Batch size for processing
         api_key: API key for the provider
         **kwargs: Additional arguments for the provider
@@ -198,6 +198,10 @@ def create_embedder(
         from .litellm_provider import LiteLLMProvider
 
         provider = LiteLLMProvider(model=model, api_key=api_key, **kwargs)
+    elif provider_type == "tei":
+        from .tei_provider import TEIProvider
+        
+        provider = TEIProvider(model=model, api_key=api_key, **kwargs)
     else:
         raise ValueError(f"Unknown provider type: {provider_type}")
 
