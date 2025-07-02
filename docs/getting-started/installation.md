@@ -14,14 +14,16 @@ ContextFrame provides flexible installation options to suit different use cases,
 For basic ContextFrame functionality:
 
 ```bash
-pip install contextframe
+pip install contextframe==0.1.2
 ```
 
 Or using uv (recommended for faster installation):
 
 ```bash
-uv pip install contextframe
+uv pip install contextframe==0.1.2
 ```
+
+**Important**: Install version 0.1.2 or later to ensure the correct dependencies (pylance) are installed.
 
 ## Installation Options
 
@@ -34,7 +36,7 @@ The base package includes:
 - Schema validation
 
 ```bash
-pip install contextframe
+pip install contextframe==0.1.2
 ```
 
 ### With Embeddings Support

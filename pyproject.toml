@@ -1,6 +1,6 @@
 [project]
 name = "contextframe"
-version = "0.1.0"
+version = "0.1.2"
 description = "ContextFrame: A global standard file specification for contextual document management with LLMs"
 authors = [
     {name = "ContextFrame Team", email = "contact@contextframe.org"}
@@ -11,9 +11,9 @@ readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
     "jsonschema",
-    "lance>=0.7.0",
-    "pyarrow>=14.0.2",
-    "numpy>=1.24",
+    "pylance>=0.7.0",
+    "pyarrow>=17.0.0",
+    "numpy>=1.24,<2",
     "pyyaml>=6.0.0",
 ]
 classifiers = [
@@ -88,6 +88,7 @@ embed = [
     "openai>=1.0.0",
     "anthropic>=0.21.0",
     "cohere>=4.0.0",
+    "httpx>=0.25.0",  # For TEI provider
 ]
 enhance = [
     "openai>=1.0.0",

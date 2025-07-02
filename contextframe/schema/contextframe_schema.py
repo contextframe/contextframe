@@ -119,7 +119,7 @@ def build_schema(embed_dim: int = DEFAULT_EMBED_DIM) -> pa.Schema:  # noqa: D401
         pa.field("text_content", pa.string()),
         pa.field(
             "vector",
-            pa.list_(pa.float32(), list_size=embed_dim),
+            pa.list_(pa.float32(), embed_dim),
         ),
         pa.field("title", pa.string(), nullable=False),
         pa.field("version", pa.string()),

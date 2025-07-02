@@ -23,6 +23,8 @@ import re
 import uuid as _uuid
 from typing import Any, Optional
 
+from ..exceptions import ValidationError
+
 # ---------------------------------------------------------------------------
 # Constants / basic validation helpers
 # ---------------------------------------------------------------------------
@@ -175,7 +177,11 @@ def create_relationship(
 ) -> dict[str, Any]:
     """Create a relationship object compatible with the JSON schema."""
     if rel_type not in VALID_RELATIONSHIP_TYPES:
-        raise ValueError(f"rel_type must be one of {sorted(VALID_RELATIONSHIP_TYPES)}")
+        valid_types = ", ".join(sorted(VALID_RELATIONSHIP_TYPES))
+        raise ValidationError(
+            f"Invalid relationship type: '{rel_type}'. Valid types are: {valid_types}.",
+            field="relationship_type"
+        )
 
     rel: dict[str, Any] = {"type": rel_type}
     if is_valid_uuid(reference):
@@ -217,15 +223,25 @@ def validate_relationships(rels: list[dict[str, Any]]) -> None:
 
     Raises
     ------
-    ValueError
+    ValidationError
         If any relationship is invalid.
     """
-    for r in rels:
-        if "type" not in r or r["type"] not in VALID_RELATIONSHIP_TYPES:
-            raise ValueError(f"Invalid relationship type in {r}")
+    errors = {}
+    for i, r in enumerate(rels):
+        field_prefix = f"relationships[{i}]"
+        
+        if "type" not in r:
+            errors[f"{field_prefix}.type"] = "Relationship type is required"
+        elif r["type"] not in VALID_RELATIONSHIP_TYPES:
+            valid_types = ", ".join(sorted(VALID_RELATIONSHIP_TYPES))
+            errors[f"{field_prefix}.type"] = f"Invalid relationship type: '{r['type']}'. Valid types are: {valid_types}"
+        
         # Ensure at least one identifier field is present.
         if not any(k in r for k in ("id", "path", "uri", "cid")):
-            raise ValueError(f"Relationship missing identifier (id|path|uri|cid): {r}")
+            errors[field_prefix] = "Relationship must have at least one identifier (id, path, uri, or cid)"
+    
+    if errors:
+        raise ValidationError("Invalid relationships", errors=errors)
 
 
 # ---------------------------------------------------------------------------
