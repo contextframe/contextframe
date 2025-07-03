@@ -162,8 +162,39 @@ ContextFrame relies on Lance as its fundamental storage primitive. Key character
 - Use Doppler for environment variables - never create .env files
 - Wrap commands with `doppler run --` when environment variables are needed
 
+## Linear Issue Management
+
+When creating or updating Linear issues, use these "Magic Words" in commit messages and PR descriptions to automatically link work:
+
+### Issue References
+
+- `Fixes TEAM-123` - Marks issue as completed when PR is merged
+- `Closes TEAM-123` - Same as Fixes
+- `Resolves TEAM-123` - Same as Fixes
+- `Refs TEAM-123` - Links to issue without changing status
+- `References TEAM-123` - Same as Refs
+
+### Multiple Issues
+
+- Can reference multiple issues: `Fixes TEAM-123, Refs TEAM-456`
+- Works in commit messages and PR descriptions
+- Case insensitive (fixes, Fixes, FIXES all work)
+
+### Examples
+
+```bash
+# In commit messages
+git commit -m "feat: Add authentication flow
+
+Fixes CFHOST-20
+Refs CFHOST-16"
+
+# In PR titles/descriptions
+"Implement billing integration - Fixes CFHOST-24"
+```
+
 ## Important Notes
 
 - Do not use emojis
 - Avoid writing  "🤖 Generated with Claude Code" when making commits or PRs
-
+- Always use Linear magic words when committing work related to Linear issues

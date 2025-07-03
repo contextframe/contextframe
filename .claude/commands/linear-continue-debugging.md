@@ -69,8 +69,12 @@ Need to understand bug state, leverage advanced tools, and find root cause
    - Write failing test that reproduces the bug
    - Implement minimal fix addressing root cause
    - Add defensive coding to prevent recurrence
+   - Commit with Linear magic words:
+     - "Refs TEAM-123" for investigation commits
+     - "Fixes TEAM-123" for final bug fix
    - Update Linear with detailed findings:
-     ```
+
+     ```javascript
      mcp__linear__create_comment(issueId, body="""
      ## Root Cause Analysis
      - Hypothesis tested: ...
@@ -79,8 +83,8 @@ Need to understand bug state, leverage advanced tools, and find root cause
      - Fix approach: ...
      """)
      ```
-   
-8. Knowledge capture:
+
+7. Knowledge capture:
    - Create `.claude/debugging/[bug-pattern].md` with learnings
    - Update documentation if user-facing issue
    - Add code comments explaining non-obvious fixes

@@ -39,10 +39,12 @@ Need complete workflow from Linear issue to merged PR
    - Mark "In Progress" in Linear
    - Implement with full error handling
    - Write comprehensive tests
-   - Commit with issue reference
-   - Push and create PR
+   - Commit with Linear magic words:
+     - Use "Fixes TEAM-123" to auto-complete on merge
+     - Use "Refs TEAM-123" to link without status change
+   - Push and create PR with magic words in description
    - Link PR to Linear issue
-   - Update to "Done" when merged
+   - Update to "Done" when merged (or auto-completed via magic words)
 4. Quality gates per PR: tests pass, linting clean, docs updated
 5. Track progress via project view in Linear
 </actions>

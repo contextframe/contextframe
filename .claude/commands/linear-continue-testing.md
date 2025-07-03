@@ -60,7 +60,10 @@ Need to assess current test state and complete comprehensive coverage
    - List any discovered issues or concerns
    - Update issue status if testing complete
    - Create new issues for bugs found during testing
-   
+   - Use magic words in commits:
+     - "Refs TEAM-123" for test additions
+     - "Fixes TEAM-123" if tests complete the issue
+
 7. Generate test summary:
    - Coverage before/after metrics
    - New test scenarios added

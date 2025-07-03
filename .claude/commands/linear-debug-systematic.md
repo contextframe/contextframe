@@ -33,8 +33,11 @@ Need root cause analysis and comprehensive fix
 5. Add targeted logging: logger.debug(f"State: {state}, Inputs: {inputs}, Conditions: {conditions}")
 6. Fix root cause → handle all discovered edge cases
 7. Write failing test → add integration test → document pattern
-8. Create `.claude/debugging/[issue-type].md` with full learnings
-9. If using project: Update all related issues with findings
+8. Commit with Linear magic words:
+   - "Refs TEAM-123" for investigation commits
+   - "Fixes TEAM-123" for final bug fix
+9. Create `.claude/debugging/[issue-type].md` with full learnings
+10. If using project: Update all related issues with findings
 </actions>
 
 This bug teaches us about our system. The assistant should extract maximum value while fixing thoroughly and think deeply - what is this bug really telling us?

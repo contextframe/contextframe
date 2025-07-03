@@ -42,7 +42,13 @@ Need detailed, actionable plan with measurable outcomes
    - Dependencies clearly mapped
    - Technical implementation notes
    - Links to project for context
-6. Generate workflow: branch names per issue, implementation order, commit templates, PR checklist
+6. Generate workflow:
+   - Branch names per issue (using Linear's git branch names)
+   - Implementation order with dependencies
+   - Commit templates with magic words:
+     - "Refs TEAM-123" for progress commits
+     - "Fixes TEAM-123" for completing issues
+   - PR checklist with Linear integration
 7. Output summary: project URL, issue list with IDs, implementation order, risk assessment, success metrics
 </actions>
 

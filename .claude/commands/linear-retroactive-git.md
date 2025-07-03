@@ -366,13 +366,13 @@ When dealing with changes already in the working state:
    # Apply only relevant changes for this issue
    git checkout stash@{0} -- ${files_for_this_issue}
    
-   # Commit with Linear issue reference
+   # Commit with Linear magic words
    git add ${files_for_this_issue}
    git commit -m "${issueIdentifier}: ${issueTitle}
    
    ${issueDescription}
    
-   Resolves: ${issueUrl}"
+   Fixes ${issueIdentifier}"
    
    # Push branch
    git push -u origin ${branchName}

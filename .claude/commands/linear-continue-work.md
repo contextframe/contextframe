@@ -49,7 +49,10 @@ Need to understand current state and define clear next steps
    - mcp_linear.create_comment(issueId, body="Progress update with next steps")
    - Update issue status if needed: mcp_linear.update_issue(id, stateId)
    - Link any new discoveries or blockers
-   
+   - Use magic words in commits:
+     - "Refs TEAM-123" for progress commits
+     - "Fixes TEAM-123" for final completion
+
 6. Generate action plan:
    - Immediate next code changes
    - Tests to write or fix

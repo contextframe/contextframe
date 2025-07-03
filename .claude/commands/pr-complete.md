@@ -44,7 +44,7 @@ Make review process smooth and efficient
    
 ## Linear Issues
 
-   Resolves: #FUN-XXX, #FUN-YYY
+   Fixes #FUN-XXX, Refs #FUN-YYY
    
 ## Testing
 
