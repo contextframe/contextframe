@@ -227,4 +227,4 @@ Behind the scenes these forward to `LanceDataset.create_index()` / `create_scala
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the LGPL-3.0-or-later License - see the LICENSE file for details.

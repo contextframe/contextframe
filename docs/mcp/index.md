@@ -138,4 +138,4 @@ graph TB
 
 ## License
 
-ContextFrame is open source software licensed under the MIT License.
+ContextFrame is open source software licensed under the LGPL-3.0-or-later License.
