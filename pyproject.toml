@@ -5,7 +5,7 @@ description = "ContextFrame: A global standard file specification for contextual
 authors = [
     {name = "ContextFrame Team", email = "contact@contextframe.org"}
 ]
-license = "MIT"
+license = "LGPL-3.0-or-later"
 license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
