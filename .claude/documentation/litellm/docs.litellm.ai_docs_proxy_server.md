@@ -226,7 +226,7 @@ docker compose up -d
 ```
 
 ```codeBlockLines_e6Vv
-pip install pyautogen
+pip install ag2
 
 ```
 
@@ -472,7 +472,7 @@ $ aider --openai-api-base http://0.0.0.0:8000 --openai-api-key fake-key
 ```
 
 ```codeBlockLines_e6Vv
-pip install pyautogen
+pip install ag2
 
 ```
 
